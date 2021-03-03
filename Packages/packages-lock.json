@@ -97,6 +97,13 @@
       "dependencies": {},
       "hash": "9e737d3d11c06bc3ed1f8d467b985ec17e5f9da2"
     },
+    "org.kumas.nuget-importer": {
+      "version": "https://github.com/kumaS-nu/NuGet-importer-for-Unity.git?path=NuGetImporterForUnity/Packages/NuGet Importer",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "3e0d60470465167bcc5e8cb89705e5408ccab5bf"
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,

@@ -60,3 +60,10 @@ crashlytics-build.properties
 
 /[Aa]ssets/Live2D/
 /Assets/Live2D.meta
+
+/[Aa]ssets/Packages/
+/[Aa]ssets/Packages.meta
+/[Aa]ssets/packages.config
+/[Aa]ssets/packages.config.meta
+/[Aa]ssets/rootPackages.xml
+/[Aa]ssets/rootPackages.xml.meta
