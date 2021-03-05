@@ -1,0 +1,16 @@
+{
+    "name": "kumaS.Tracker.OpenPose",
+    "references": [
+        "GUID:044d91857fdb8224baaeef6660f799a8",
+        "GUID:2bfe4d119d8480c429e013cc9a7059f5"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
