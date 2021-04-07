@@ -1,11 +1,14 @@
 {
-    "name": "kumaS.Tracker.VRM",
+    "name": "kumaS.Tracker.VRM.Editor",
     "references": [
         "GUID:044d91857fdb8224baaeef6660f799a8",
+        "GUID:88cb34a1cc3ea1c4a95081918605135d",
         "GUID:05dd262a0c0a2f841b8252c8c3815582",
         "GUID:560b04d1a97f54a4e82edc0cbbb69285"
     ],
-    "includePlatforms": [],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
