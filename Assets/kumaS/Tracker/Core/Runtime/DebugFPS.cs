@@ -4,6 +4,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 namespace kumaS.Tracker.Core {
+
+    /// <summary>
+    /// FPSをデバッグする際のデータ。
+    /// </summary>
     public class DebugFPS : IDebugMessage
     {
         public string ProcessName { get; set; }

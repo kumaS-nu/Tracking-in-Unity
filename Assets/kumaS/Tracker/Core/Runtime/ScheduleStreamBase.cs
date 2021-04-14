@@ -43,8 +43,7 @@ namespace kumaS.Tracker.Core
         /// <value>
         /// デバッグ出力をするか。
         /// </value>
-        [SerializeField]
-        internal BoolReactiveProperty isDebug = new BoolReactiveProperty(true);
+        public BoolReactiveProperty isDebug = new BoolReactiveProperty(true);
 
         /// <summary>
         /// デバッグ出力をするか。

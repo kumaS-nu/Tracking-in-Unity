@@ -1,7 +1,9 @@
 {
     "name": "kumaS.Tracker.Dlib",
     "references": [
-        "GUID:044d91857fdb8224baaeef6660f799a8"
+        "GUID:044d91857fdb8224baaeef6660f799a8",
+        "GUID:560b04d1a97f54a4e82edc0cbbb69285",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

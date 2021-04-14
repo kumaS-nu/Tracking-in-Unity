@@ -24,6 +24,7 @@ namespace kumaS.Tracker.VRM
         private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private Dictionary<string, BlendShapeKey> convertTable = new Dictionary<string, BlendShapeKey>();
+        private Dictionary<string, Transform> innerTransforms = new Dictionary<string, Transform>();
 
         private void Awake()
         {
@@ -34,6 +35,11 @@ namespace kumaS.Tracker.VRM
                     convertTable[clip.Key.Name] = clip.Key;
                 }
             }
+            foreach(var t in transforms)
+            {
+                innerTransforms[t.name] = t;
+            }
+
             isAvailable.Value = true;
         }
 
@@ -41,15 +47,19 @@ namespace kumaS.Tracker.VRM
         {
             if (input.IsSuccess)
             {
-                foreach (var t in transforms)
+                foreach(var pos in input.Data.Position)
                 {
-                    if (input.Data.Position.TryGetValue(t.name, out var pos))
+                    if(innerTransforms.TryGetValue(pos.Key, out var t))
                     {
-                        t.position = pos;
+                        t.position = pos.Value;
                     }
-                    if (input.Data.Rotation.TryGetValue(t.name, out var rot))
+                }
+
+                foreach (var rot in input.Data.Rotation)
+                {
+                    if (innerTransforms.TryGetValue(rot.Key, out var t))
                     {
-                        t.rotation = rot;
+                        t.rotation = rot.Value;
                     }
                 }
 

@@ -35,6 +35,13 @@ namespace kumaS.Tracker.Core
             }
         }
 
+        /// <summary>
+        /// パス名をシリアライズ。
+        /// </summary>
+        /// <param name="fileName">入力されたパス名。</param>
+        /// <param name="pathType">パスの種類。</param>
+        /// <param name="useUnity">Unityを使うか。</param>
+        /// <returns>シリアライズされたパス名。</returns>
         public static string Serialize(string fileName, int pathType, bool useUnity)
         {
             Init();
@@ -58,6 +65,12 @@ namespace kumaS.Tracker.Core
             return fileName;
         }
 
+        /// <summary>
+        /// パス名をデシリアライズ。
+        /// </summary>
+        /// <param name="fileName">シリアライズされたパス名。</param>
+        /// <param name="pathType">パスの種類。</param>
+        /// <returns>デシリアライズされたパス名。</returns>
         public static string Deserialize(string fileName, int pathType)
         {
             Init();

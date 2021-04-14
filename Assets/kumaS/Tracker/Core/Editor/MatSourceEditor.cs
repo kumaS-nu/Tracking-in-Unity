@@ -27,6 +27,7 @@ namespace kumaS.Tracker.Core.Editor
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
+
             using (new EditorGUI.DisabledGroupScope(true))
             {
                 EditorGUILayout.ObjectField("Script", MonoScript.FromMonoBehaviour((MonoBehaviour)target), typeof(MonoScript), false);
@@ -57,7 +58,7 @@ namespace kumaS.Tracker.Core.Editor
                 }
             }
 
-            ((MatSource)target).ProcessName = EditorGUILayout.TextField("Process name", ((MatSource)target).ProcessName);
+            ((ISchedule)target).ProcessName = EditorGUILayout.TextField("Process name", ((ISchedule)target).ProcessName);
             EditorGUILayout.Space();
             EditorGUILayout.Space();
 

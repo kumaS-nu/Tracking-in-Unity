@@ -37,7 +37,7 @@ namespace kumaS.Tracker.Core
         [SerializeField]
         internal bool isDebugSize = true;
 
-        public override string[] DebugKey { get; } = new string[] { nameof(Elapsed_Time), nameof(Data_Pointer), nameof(Width), nameof(height) };
+        public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Data_Pointer), nameof(Width), nameof(height) };
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
         public override string ProcessName { get; set; } = "Mat source";
 
@@ -48,7 +48,6 @@ namespace kumaS.Tracker.Core
         private int width;
         private int height;
 
-        private readonly string Elapsed_Time = nameof(Elapsed_Time);
         private readonly string Data_Pointer = nameof(Data_Pointer);
         private readonly string Width = nameof(Width);
         private readonly string Height = nameof(Height);
@@ -92,7 +91,7 @@ namespace kumaS.Tracker.Core
         protected override IDebugMessage DebugLogInternal(SchedulableData<Mat> data)
         {
             var msg = new Dictionary<string, string>();
-            msg[Elapsed_Time] = data.ElapsedTimes[data.ElapsedTimes.Count - 1].TotalMilliseconds.ToString("F") + "ms";
+            data.ToDebugElapsedTime(msg);
             if (data.IsSuccess)
             {
                 if (!data.Data.IsDisposed)

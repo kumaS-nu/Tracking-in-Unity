@@ -130,20 +130,20 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 360894268}
-  - component: {fileID: 360894267}
   - component: {fileID: 360894271}
   - component: {fileID: 360894270}
   - component: {fileID: 360894269}
   - component: {fileID: 360894273}
   - component: {fileID: 360894274}
   - component: {fileID: 360894272}
+  - component: {fileID: 360894267}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &360894267
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,31 +156,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80758d2e95b8c0d4e882e84a066b2475, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sourceFold: 0
+  sourceFold: 1
   streamFold: 1
   streamFolds: 01
-  fpsFold: 0
-  destinationFold: 0
+  fpsFold: 1
+  destinationFold: 1
   sources:
   - {fileID: 360894271}
   streams:
   - {fileID: 360894270}
   - {fileID: 360894269}
-  - {fileID: 360894273}
   - {fileID: 360894274}
+  - {fileID: 360894273}
   destinations:
   - {fileID: 360894272}
   streamUnitStarts: 00000000
   streamInputs: ffffffff
-  streamOutputs: ffffffff
+  streamOutputs: 00000000
   fps: 3c000000
-  thread: 16
+  thread: 8
   isDebug:
-    value: 1
+    value: 0
   isWriteFile:
-    value: 1
+    value: 0
   isDebugFPS:
-    value: 1
+    value: 0
 --- !u!4 &360894268
 Transform:
   m_ObjectHideFlags: 0
@@ -279,8 +279,11 @@ MonoBehaviour:
     value: 1
   bufferSize: 8
   resetKey: 114
-  speedLimit: 0.05
-  isDebugBox: 1
+  moveSpeedLimit: 0.05
+  moveRange: 0.5
+  rotateSpeedLimit: 15
+  rotateRange: 90
+  isDebugHead: 1
 --- !u!114 &360894274
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -296,10 +299,11 @@ MonoBehaviour:
   isDebug:
     value: 1
   moveScale: 0.1
-  center: {fileID: 478407022}
   isEnableDepth: 1
   depthCenter: 0.3
-  isDebugBB: 1
+  sourceIsMirror: 0
+  wantMirror: 1
+  isDebugHead: 1
 --- !u!1 &478407021
 GameObject:
   m_ObjectHideFlags: 0

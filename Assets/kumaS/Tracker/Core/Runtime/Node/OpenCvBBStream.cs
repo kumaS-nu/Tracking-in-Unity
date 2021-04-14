@@ -8,6 +8,9 @@ using Cysharp.Threading.Tasks;
 
 namespace kumaS.Tracker.Core
 {
+    /// <summary>
+    /// OpenCvを使い、バウンダリーボックスを検出する。
+    /// </summary>
     public class OpenCvBBStream : ScheduleStreamBase<Mat, BoundaryBox>
     {
         [SerializeField]
@@ -23,12 +26,11 @@ namespace kumaS.Tracker.Core
 
         public override string ProcessName { get; set; } = "OpenCvSharp BB predict";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
-        public override string[] DebugKey { get; } = new string[] { nameof(Elapsed_Time), nameof(Image_Width), nameof(Image_Height), nameof(X), nameof(Y), nameof(Width), nameof(Height) };
+        public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Image_Width), nameof(Image_Height), nameof(X), nameof(Y), nameof(Width), nameof(Height) };
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
         private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
-        private readonly string Elapsed_Time = nameof(Elapsed_Time);
         private readonly string Image_Width = nameof(Image_Width);
         private readonly string Image_Height = nameof(Image_Height);
         private readonly string X = nameof(X);
@@ -55,7 +57,7 @@ namespace kumaS.Tracker.Core
             {
                 if (!input.IsSuccess)
                 {
-                    return new SchedulableData<BoundaryBox>(input, null);
+                    return new SchedulableData<BoundaryBox>(input, default);
                 }
 
                 if (TryGetThread(out var thread))
@@ -65,7 +67,7 @@ namespace kumaS.Tracker.Core
                         var box = predictor[thread].DetectMultiScale(input.Data);
                         if (box.Length == 0)
                         {
-                            return new SchedulableData<BoundaryBox>(input, null, false, "顔が検出されませんでした。");
+                            return new SchedulableData<BoundaryBox>(input, default, false, "顔が検出されませんでした。");
                         }
                         var bb = new BoundaryBox(input.Data, new UnityEngine.Rect(box[0].Left, box[0].Top, box[0].Width, box[0].Height));
                         return new SchedulableData<BoundaryBox>(input, bb);
@@ -77,7 +79,7 @@ namespace kumaS.Tracker.Core
                 }
                 else
                 {
-                    return new SchedulableData<BoundaryBox>(input, null, false, "スレッドを確保できませんでした。");
+                    return new SchedulableData<BoundaryBox>(input, default, false, "スレッドを確保できませんでした。");
                 }
             }
             finally
@@ -92,7 +94,7 @@ namespace kumaS.Tracker.Core
         protected override IDebugMessage DebugLogInternal(SchedulableData<BoundaryBox> data)
         {
             var message = new Dictionary<string, string>();
-            message[Elapsed_Time] = data.ElapsedTimes[data.ElapsedTimes.Count - 1].TotalMilliseconds.ToString("F") + "ms";
+            data.ToDebugElapsedTime(message);
             if (data.IsSuccess)
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();

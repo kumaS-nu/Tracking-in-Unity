@@ -7,6 +7,9 @@ using System;
 
 namespace kumaS.Tracker.Core
 {
+    /// <summary>
+    /// ストリームのソースの情報。
+    /// </summary>
     internal class StreamSourceInfomation
     {
         internal int id;

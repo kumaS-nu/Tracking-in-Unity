@@ -49,7 +49,7 @@ namespace kumaS.Tracker.Core
             "L_Eye", "R_Eye"
         };
         public string[] DefaultParameterList { get; } = {
-            "L_EyeOpen", "R_EyeOpen",
+            "Blink_L", "Blink_R",
             "A", "I", "U", "E", "O"
         };
 

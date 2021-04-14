@@ -291,7 +291,7 @@ namespace kumaS.Tracker.Core
                         currentDebugStreams.Add(debugStreams[i]);
                     }
                 }
-                debugStream = currentDebugStreams.Merge().ObserveOnMainThread().Subscribe(OutputDebug);
+                debugStream = currentDebugStreams.Merge().ObserveOnMainThread().Subscribe(OutputDebug).AddTo(this);
             }
         }
         
@@ -421,7 +421,7 @@ namespace kumaS.Tracker.Core
         /// <returns></returns>
         private async UniTask ScheduleLoop(CancellationToken token)
         {
-            Observable.Interval(TimeSpan.FromSeconds(1)).Subscribe(_ => LogFPS());
+            Observable.Interval(TimeSpan.FromSeconds(1)).Subscribe(_ => LogFPS()).AddTo(token);
 
             while (true)
             {

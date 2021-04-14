@@ -10,6 +10,10 @@ using Cysharp.Threading.Tasks;
 
 namespace kumaS.Tracker.Core
 {
+    /// <summary>
+    /// データを平滑化するための基底クラス。
+    /// </summary>
+    /// <typeparam name="T">平滑化するデータの型。</typeparam>
     public abstract class SmoothingStreamBase<T> : ScheduleStreamBase<T, T>
     {
         [SerializeField]
@@ -26,8 +30,9 @@ namespace kumaS.Tracker.Core
         private volatile bool isRequiredReset = false;
 
         public override void InitInternal(int thread){
-            Observable.EveryUpdate().Where(_ => Input.GetKey(resetKey)).Subscribe(_ => isRequiredReset = true);
+            Observable.EveryUpdate().Where(_ => Input.GetKey(resetKey)).Subscribe(_ => isRequiredReset = true).AddTo(this);
         }
+
         protected override SchedulableData<T> ProcessInternal(SchedulableData<T> input)
         {
             if (!input.IsSuccess)

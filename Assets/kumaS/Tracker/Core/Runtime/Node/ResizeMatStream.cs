@@ -8,6 +8,9 @@ using Cysharp.Threading.Tasks;
 
 namespace kumaS.Tracker.Core
 {
+    /// <summary>
+    /// 画像をリサイズする。
+    /// </summary>
     public class ResizeMatStream : ScheduleStreamBase<Mat, Mat>
     {
         [SerializeField]
@@ -18,10 +21,9 @@ namespace kumaS.Tracker.Core
 
         public override string ProcessName { get; set; } = "Resize mat";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
-        public override string[] DebugKey { get; } = new string[] { nameof(Elapsed_Time), nameof(Resized_Pointer) };
+        public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Resized_Pointer) };
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get; } = new ReactiveProperty<bool>(true);
 
-        private readonly string Elapsed_Time = nameof(Elapsed_Time);
         private readonly string Resized_Pointer = nameof(Resized_Pointer);
 
         public override void InitInternal(int thread){ }
@@ -30,7 +32,7 @@ namespace kumaS.Tracker.Core
         {
             if (!input.IsSuccess)
             {
-                return new SchedulableData<Mat>(input, null);
+                return new SchedulableData<Mat>(input, default);
             }
             var resized = new Mat();
             Cv2.Resize(input.Data, resized, Size.Zero, ratio, ratio, interpolation);
@@ -45,7 +47,7 @@ namespace kumaS.Tracker.Core
         protected override IDebugMessage DebugLogInternal(SchedulableData<Mat> data)
         {
             var message = new Dictionary<string, string>();
-            message[Elapsed_Time] = data.ElapsedTimes[data.ElapsedTimes.Count - 1].TotalMilliseconds.ToString("F") + "ms";
+            data.ToDebugElapsedTime(message);
             if (data.IsSuccess && !data.Data.IsDisposed)
             {
                 message[Resized_Pointer] = data.Data.Data.ToInt32().ToString();

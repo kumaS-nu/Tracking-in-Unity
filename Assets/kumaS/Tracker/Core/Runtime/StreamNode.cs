@@ -96,8 +96,16 @@ namespace kumaS.Tracker.Core
         }
         private IObservable<ElapsedTimeLog> timeStream;
 
+        /// <summary>
+        /// エラーのストリームを設定。
+        /// </summary>
         internal IObservable<object> ErrorStream { set => errorStream = value; }
 
+        /// <summary>
+        /// エラーのストリームを取得。
+        /// </summary>
+        /// <param name="stream">ストリーム。</param>
+        /// <returns>成功したか。</returns>
         internal bool TryGetErrorStream(out IObservable<object> stream)
         {
             if(errorStream != null && Schedulable is IScheduleDestination)

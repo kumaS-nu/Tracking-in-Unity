@@ -1,0 +1,19 @@
+{
+    "name": "kumaS.Tracker.Dlib.Editor",
+    "references": [
+        "GUID:044d91857fdb8224baaeef6660f799a8",
+        "GUID:560b04d1a97f54a4e82edc0cbbb69285",
+        "GUID:fac68a9a188a92f42b3da6cb2087e8f7"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

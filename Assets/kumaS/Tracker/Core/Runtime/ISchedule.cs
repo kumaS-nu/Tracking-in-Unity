@@ -8,12 +8,12 @@ namespace kumaS.Tracker.Core
     /// <summary>
     /// スケジュールで管理するためのインターフェース。内部用。
     /// </summary>
-    internal interface ISchedule
+    public interface ISchedule
     {
         /// <summary>
         /// このプロセスの名前。
         /// </summary>
-        string ProcessName { get; }
+        string ProcessName { get; set; }
 
         /// <summary>
         /// このノードのId。スケジューラーに設定されるので設定はそちらに任せる。
