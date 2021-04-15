@@ -94,7 +94,7 @@ namespace kumaS.Tracker.Dlib.Editor
             using(new EditorGUI.IndentLevelScope())
             {
                 property[nameof(Dlib68ToHeadTransformStream.fold)].boolValue = EditorGUILayout.Foldout(property[nameof(Dlib68ToHeadTransformStream.fold)].boolValue, "Landmark positions");
-                if (!property[nameof(Dlib68ToHeadTransformStream.fold)].boolValue)
+                if (property[nameof(Dlib68ToHeadTransformStream.fold)].boolValue)
                 {
                     for(var i = 0; i < property[nameof(Dlib68ToHeadTransformStream.realPoint)].arraySize; i++)
                     {

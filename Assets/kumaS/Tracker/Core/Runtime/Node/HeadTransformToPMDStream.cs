@@ -11,9 +11,9 @@ using UnityEngine;
 namespace kumaS.Tracker.Core
 {
     /// <summary>
-    /// 頭の位置・回転をMPDにするストリーム。
+    /// 頭の位置・回転をPMDにするストリーム。
     /// </summary>
-    public class HeadTransformToMPDStream : ScheduleStreamBase<HeadTransform, ModelPredictedData>
+    public class HeadTransformToPMDStream : ScheduleStreamBase<HeadTransform, PredictedModelData>
     {
         [SerializeField]
         internal bool isDebugHead = true;
@@ -21,7 +21,7 @@ namespace kumaS.Tracker.Core
         [SerializeField]
         internal Transform center;
 
-        public override string ProcessName { get; set; } = "Head transform to MPD";
+        public override string ProcessName { get; set; } = "Head transform to PMD";
         public override Type[] UseType { get; } = new Type[0];
         public override string[] DebugKey { get; } = new string[] {
             SchedulableData<object>.Elapsed_Time,
@@ -40,7 +40,7 @@ namespace kumaS.Tracker.Core
 
         public override void InitInternal(int thread) { }
 
-        protected override IDebugMessage DebugLogInternal(SchedulableData<ModelPredictedData> data)
+        protected override IDebugMessage DebugLogInternal(SchedulableData<PredictedModelData> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
@@ -52,25 +52,25 @@ namespace kumaS.Tracker.Core
             return new DebugMessage(data, message);
         }
 
-        protected override SchedulableData<ModelPredictedData> ProcessInternal(SchedulableData<HeadTransform> input)
+        protected override SchedulableData<PredictedModelData> ProcessInternal(SchedulableData<HeadTransform> input)
         {
             if (!input.IsSuccess)
             {
-                return new SchedulableData<ModelPredictedData>(input, default);
+                return new SchedulableData<PredictedModelData>(input, default);
             }
             
             return ProcessInternalAsync(input).ToObservable().Wait();
         }
 
-        private async UniTask<SchedulableData<ModelPredictedData>> ProcessInternalAsync(SchedulableData<HeadTransform> input)
+        private async UniTask<SchedulableData<PredictedModelData>> ProcessInternalAsync(SchedulableData<HeadTransform> input)
         {
             await UniTask.SwitchToMainThread();
             var pos = new Dictionary<string, Vector3>();
             pos[Head] = center.TransformPoint(input.Data.Position);
             var rot = new Dictionary<string, Quaternion>();
             rot[Head] = input.Data.Rotation * center.rotation;
-            var ret = new ModelPredictedData(pos, rot, new Dictionary<string, float>());
-            return new SchedulableData<ModelPredictedData>(input, ret);
+            var ret = new PredictedModelData(pos, rot, new Dictionary<string, float>());
+            return new SchedulableData<PredictedModelData>(input, ret);
         }
     }
 }

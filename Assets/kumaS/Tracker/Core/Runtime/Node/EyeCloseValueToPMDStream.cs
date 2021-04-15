@@ -9,14 +9,14 @@ using UnityEngine;
 namespace kumaS.Tracker.Core
 {
     /// <summary>
-    /// 目の閉じ具合をMPDに変換するストリーム。
+    /// 目の閉じ具合をPMDに変換するストリーム。
     /// </summary>
-    public class EyeCloseValueToMPDStream : ScheduleStreamBase<EyeCloseValue, ModelPredictedData>
+    public class EyeCloseValueToPMDStream : ScheduleStreamBase<EyeCloseValue, PredictedModelData>
     {
         [SerializeField]
         internal bool isDebugValue = true;
 
-        public override string ProcessName { get; set; } = "Eye close value to MPD";
+        public override string ProcessName { get; set; } = "Eye close value to PMD";
         public override Type[] UseType { get; } = new Type[0];
         public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Blink_L), nameof(Blink_R) };
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get; } = new ReactiveProperty<bool>(true);
@@ -26,7 +26,7 @@ namespace kumaS.Tracker.Core
 
         public override void InitInternal(int thread){ }
 
-        protected override IDebugMessage DebugLogInternal(SchedulableData<ModelPredictedData> data)
+        protected override IDebugMessage DebugLogInternal(SchedulableData<PredictedModelData> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
@@ -38,18 +38,18 @@ namespace kumaS.Tracker.Core
             return new DebugMessage(data, message);
         }
 
-        protected override SchedulableData<ModelPredictedData> ProcessInternal(SchedulableData<EyeCloseValue> input)
+        protected override SchedulableData<PredictedModelData> ProcessInternal(SchedulableData<EyeCloseValue> input)
         {
             if (!input.IsSuccess)
             {
-                return new SchedulableData<ModelPredictedData>(input, default);
+                return new SchedulableData<PredictedModelData>(input, default);
             }
 
             var paramater = new Dictionary<string, float>();
             paramater[Blink_L] = input.Data.Left;
             paramater[Blink_R] = input.Data.Right;
-            var ret = new ModelPredictedData(new Dictionary<string, Vector3>(), new Dictionary<string, Quaternion>(), paramater);
-            return new SchedulableData<ModelPredictedData>(input, ret);
+            var ret = new PredictedModelData(new Dictionary<string, Vector3>(), new Dictionary<string, Quaternion>(), paramater);
+            return new SchedulableData<PredictedModelData>(input, ret);
         }
     }
 }

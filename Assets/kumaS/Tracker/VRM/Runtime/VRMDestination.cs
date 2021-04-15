@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace kumaS.Tracker.VRM
 {
-    public class VRMDestination : ScheduleDestinationBase<ModelPredictedData>
+    public class VRMDestination : ScheduleDestinationBase<PredictedModelData>
     {
         [SerializeField]
         internal List<Transform> transforms = new List<Transform>();
@@ -43,7 +43,7 @@ namespace kumaS.Tracker.VRM
             isAvailable.Value = true;
         }
 
-        protected override void ProcessInternal(SchedulableData<ModelPredictedData> input)
+        protected override void ProcessInternal(SchedulableData<PredictedModelData> input)
         {
             if (input.IsSuccess)
             {

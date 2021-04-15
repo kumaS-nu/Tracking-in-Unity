@@ -1,20 +1,21 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using kumaS.Tracker.Core;
 using UnityEditor;
+using kumaS.Tracker.Core;
 
 namespace kumaS.Tracker.Core.Editor
 {
-    public class HeadTransformToMPDStreamEditor : UnityEditor.Editor
+    [CustomEditor(typeof(EyeRotationToPMDStream))]
+    public class EyeRotationToPMDStreamEditor : UnityEditor.Editor
     {
         private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {
-            property[nameof(HeadTransformToMPDStream.isDebug)] = serializedObject.FindProperty(nameof(HeadTransformToMPDStream.isDebug));
-            property[nameof(HeadTransformToMPDStream.isDebugHead)] = serializedObject.FindProperty(nameof(HeadTransformToMPDStream.isDebugHead));
-            property[nameof(HeadTransformToMPDStream.center)] = serializedObject.FindProperty(nameof(HeadTransformToMPDStream.center));
+            property[nameof(EyeRotationToPMDStream.isDebug)] = serializedObject.FindProperty(nameof(EyeRotationToPMDStream.isDebug));
+            property[nameof(EyeRotationToPMDStream.isDebugRotation)] = serializedObject.FindProperty(nameof(EyeRotationToPMDStream.isDebugRotation));
+            property[nameof(EyeRotationToPMDStream.forward)] = serializedObject.FindProperty(nameof(EyeRotationToPMDStream.forward));
         }
 
         public override void OnInspectorGUI()
@@ -32,13 +33,14 @@ namespace kumaS.Tracker.Core.Editor
             EditorGUILayout.LabelField("Debug setting", EditorStyles.boldLabel);
             using (new EditorGUI.IndentLevelScope())
             {
-                EditorGUILayout.PropertyField(property[nameof(HeadTransformToMPDStream.isDebug)], new GUIContent("Debug"));
-                if (((HeadTransformToMPDStream)target).isDebug.Value)
+                EditorGUILayout.PropertyField(property[nameof(EyeRotationToPMDStream.isDebug)], new GUIContent("Debug"));
+                if (((EyeRotationToPMDStream)target).isDebug.Value)
                 {
                     using (new EditorGUI.IndentLevelScope())
                     {
-                        EditorGUILayout.PropertyField(property[nameof(HeadTransformToMPDStream.isDebugHead)], new GUIContent("Head"));
+                        EditorGUILayout.PropertyField(property[nameof(EyeRotationToPMDStream.isDebugRotation)], new GUIContent("Rotation"));
                     }
+                
                 }
             }
             EditorGUILayout.Space();
@@ -47,7 +49,7 @@ namespace kumaS.Tracker.Core.Editor
             EditorGUILayout.LabelField("Convert setting", EditorStyles.boldLabel);
             using (new EditorGUI.IndentLevelScope())
             {
-                EditorGUILayout.PropertyField(property[nameof(EyeRotationToMPDStream.forward)], new GUIContent("Forward"));
+                EditorGUILayout.PropertyField(property[nameof(EyeRotationToPMDStream.forward)], new GUIContent("Forward"));
             }
 
             serializedObject.ApplyModifiedProperties();

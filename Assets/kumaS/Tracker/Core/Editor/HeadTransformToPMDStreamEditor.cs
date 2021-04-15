@@ -1,20 +1,20 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
 using kumaS.Tracker.Core;
+using UnityEditor;
 
 namespace kumaS.Tracker.Core.Editor
 {
-    [CustomEditor(typeof(EyeCloseValueToMPDStream))]
-    public class EyeCloseValueToMPDStreamEditor : UnityEditor.Editor
+    public class HeadTransformToPMDStreamEditor : UnityEditor.Editor
     {
         private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {
-            property[nameof(EyeCloseValueToMPDStream.isDebug)] = serializedObject.FindProperty(nameof(EyeCloseValueToMPDStream.isDebug));
-            property[nameof(EyeCloseValueToMPDStream.isDebugValue)] = serializedObject.FindProperty(nameof(EyeCloseValueToMPDStream.isDebugValue));
+            property[nameof(HeadTransformToPMDStream.isDebug)] = serializedObject.FindProperty(nameof(HeadTransformToPMDStream.isDebug));
+            property[nameof(HeadTransformToPMDStream.isDebugHead)] = serializedObject.FindProperty(nameof(HeadTransformToPMDStream.isDebugHead));
+            property[nameof(HeadTransformToPMDStream.center)] = serializedObject.FindProperty(nameof(HeadTransformToPMDStream.center));
         }
 
         public override void OnInspectorGUI()
@@ -32,14 +32,22 @@ namespace kumaS.Tracker.Core.Editor
             EditorGUILayout.LabelField("Debug setting", EditorStyles.boldLabel);
             using (new EditorGUI.IndentLevelScope())
             {
-                EditorGUILayout.PropertyField(property[nameof(EyeCloseValueToMPDStream.isDebug)], new GUIContent("Debug"));
-                if (((EyeCloseValueToMPDStream)target).isDebug.Value)
+                EditorGUILayout.PropertyField(property[nameof(HeadTransformToPMDStream.isDebug)], new GUIContent("Debug"));
+                if (((HeadTransformToPMDStream)target).isDebug.Value)
                 {
                     using (new EditorGUI.IndentLevelScope())
                     {
-                        EditorGUILayout.PropertyField(property[nameof(EyeCloseValueToMPDStream.isDebugValue)], new GUIContent("Value"));
+                        EditorGUILayout.PropertyField(property[nameof(HeadTransformToPMDStream.isDebugHead)], new GUIContent("Head"));
                     }
                 }
+            }
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            EditorGUILayout.LabelField("Convert setting", EditorStyles.boldLabel);
+            using (new EditorGUI.IndentLevelScope())
+            {
+                EditorGUILayout.PropertyField(property[nameof(EyeRotationToPMDStream.forward)], new GUIContent("Forward"));
             }
 
             serializedObject.ApplyModifiedProperties();

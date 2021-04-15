@@ -56,8 +56,8 @@ namespace kumaS.Tracker.Dlib
             {
                 return new SchedulableData<EyeRatio>(input, default);
             }
-            var left = ((input.Data.Landmarks[43] + input.Data.Landmarks[44]) / 2 - (input.Data.Landmarks[46] + input.Data.Landmarks[47]) / 2).Length / (input.Data.Landmarks[42] - input.Data.Landmarks[45]).Length;
-            var right = ((input.Data.Landmarks[37] + input.Data.Landmarks[38]) / 2 - (input.Data.Landmarks[40] + input.Data.Landmarks[41]) / 2).Length / (input.Data.Landmarks[36] - input.Data.Landmarks[39]).Length;
+            var left = (input.Data.Landmarks[43] + input.Data.Landmarks[44] - input.Data.Landmarks[46] - input.Data.Landmarks[47]).Length / (input.Data.Landmarks[42] - input.Data.Landmarks[45]).Length * 0.5f;
+            var right = (input.Data.Landmarks[37] + input.Data.Landmarks[38] - input.Data.Landmarks[40] - input.Data.Landmarks[41]).Length / (input.Data.Landmarks[36] - input.Data.Landmarks[39]).Length * 0.5f;
             if (mirror)
             {
                 var tmp = left;

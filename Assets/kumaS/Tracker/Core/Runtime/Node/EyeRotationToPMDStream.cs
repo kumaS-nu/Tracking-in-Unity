@@ -11,9 +11,9 @@ using UnityEngine;
 namespace kumaS.Tracker.Core
 {
     /// <summary>
-    /// 目線をMPDに変換するストリーム。
+    /// 目線をPMDに変換するストリーム。
     /// </summary>
-    public class EyeRotationToMPDStream : ScheduleStreamBase<EyeRotation, ModelPredictedData>
+    public class EyeRotationToPMDStream : ScheduleStreamBase<EyeRotation, PredictedModelData>
     {
         [SerializeField]
         internal bool isDebugRotation = true;
@@ -21,7 +21,7 @@ namespace kumaS.Tracker.Core
         [SerializeField]
         internal Transform forward;
 
-        public override string ProcessName { get; set; } = "Eye rotation to MPD";
+        public override string ProcessName { get; set; } = "Eye rotation to PMD";
         public override Type[] UseType { get; } = new Type[0];
         public override string[] DebugKey { get; } = new string[]
         {
@@ -43,7 +43,7 @@ namespace kumaS.Tracker.Core
 
         public override void InitInternal(int thread){ }
 
-        protected override IDebugMessage DebugLogInternal(SchedulableData<ModelPredictedData> data)
+        protected override IDebugMessage DebugLogInternal(SchedulableData<PredictedModelData> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
@@ -55,24 +55,24 @@ namespace kumaS.Tracker.Core
             return new DebugMessage(data, message);
         }
 
-        protected override SchedulableData<ModelPredictedData> ProcessInternal(SchedulableData<EyeRotation> input)
+        protected override SchedulableData<PredictedModelData> ProcessInternal(SchedulableData<EyeRotation> input)
         {
             if (!input.IsSuccess)
             {
-                return new SchedulableData<ModelPredictedData>(input, default);
+                return new SchedulableData<PredictedModelData>(input, default);
             }
             
             return ProcessInternalAsync(input).ToObservable().Wait();
         }
 
-        private async UniTask<SchedulableData<ModelPredictedData>> ProcessInternalAsync(SchedulableData<EyeRotation> input)
+        private async UniTask<SchedulableData<PredictedModelData>> ProcessInternalAsync(SchedulableData<EyeRotation> input)
         {
             await UniTask.SwitchToMainThread();
             var rot = new Dictionary<string, Quaternion>();
             rot[L_Eye] = input.Data.Left * forward.rotation;
             rot[R_Eye] = input.Data.Right * forward.rotation;
-            var ret = new ModelPredictedData(new Dictionary<string, Vector3>(), rot, new Dictionary<string, float>());
-            return new SchedulableData<ModelPredictedData>(input, ret);
+            var ret = new PredictedModelData(new Dictionary<string, Vector3>(), rot, new Dictionary<string, float>());
+            return new SchedulableData<PredictedModelData>(input, ret);
         }
     }
 }

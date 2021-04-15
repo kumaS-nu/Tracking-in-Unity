@@ -7,7 +7,7 @@ namespace kumaS.Tracker.Core
     /// <summary>
     /// 推定されたモデルのデータ。
     /// </summary>
-    public class ModelPredictedData
+    public class PredictedModelData
     {
         /// <summary>
         /// 位置。
@@ -15,7 +15,7 @@ namespace kumaS.Tracker.Core
         public Dictionary<string, Vector3> Position { get; }
 
         /// <summary>
-        /// 回転。
+        /// 回転。ボーンの向く先がz軸・上がy軸とする。
         /// </summary>
         public Dictionary<string, Quaternion> Rotation { get; }
 
@@ -29,7 +29,7 @@ namespace kumaS.Tracker.Core
         /// </summary>
         public Dictionary<string, object> Option { get; }
 
-        public string[] DefaultPositionList { get; } = { 
+        public static string[] DefaultPositionList { get; } = { 
             "Root", "Head",
             "L_Shoulder", "R_Shoulder",
             "L_Elbow", "R_Elbow",
@@ -38,7 +38,7 @@ namespace kumaS.Tracker.Core
             "L_Knee", "R_Knee",
             "L_Ankle", "R_Ankle"
         };
-        public string[] DefaultRotationList { get; } = {
+        public static string[] DefaultRotationList { get; } = {
             "Root", "Head",
             "L_Shoulder", "R_Shoulder",
             "L_Elbow", "R_Elbow",
@@ -48,7 +48,7 @@ namespace kumaS.Tracker.Core
             "L_Ankle", "R_Ankle",
             "L_Eye", "R_Eye"
         };
-        public string[] DefaultParameterList { get; } = {
+        public static string[] DefaultParameterList { get; } = {
             "Blink_L", "Blink_R",
             "A", "I", "U", "E", "O"
         };
@@ -57,7 +57,7 @@ namespace kumaS.Tracker.Core
         /// <param name="rotation">回転。</param>
         /// <param name="parameter">ブレンドシェイプの値。</param>
         /// <param name="option">その他。</param>
-        public ModelPredictedData(Dictionary<string, Vector3> position, Dictionary<string, Quaternion> rotation, Dictionary<string, float> parameter, Dictionary<string, object> option = null)
+        public PredictedModelData(Dictionary<string, Vector3> position, Dictionary<string, Quaternion> rotation, Dictionary<string, float> parameter, Dictionary<string, object> option = null)
         {
             Position = position;
             Rotation = rotation;
