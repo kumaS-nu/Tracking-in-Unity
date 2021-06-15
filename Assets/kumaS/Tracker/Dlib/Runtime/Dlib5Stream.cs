@@ -1,18 +1,23 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using DlibDotNet;
+
 using kumaS.Tracker.Core;
-using System;
-using UniRx;
+
 using OpenCvSharp;
-using DlibDotNet;
+
+using System;
+using System.Collections.Generic;
+using System.Threading;
+
+using UniRx;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Dlib
 {
     /// <summary>
     /// Dlibの5つの顔の特徴点を検出するストリーム。
     /// </summary>
-    public class Dlib5Stream : ScheduleStreamBase<BoundaryBox, Dlib5Landmarks>
+    public sealed class Dlib5Stream : ScheduleStreamBase<BoundaryBox, Dlib5Landmarks>
     {
         [SerializeField]
         internal string filePath;
@@ -23,6 +28,9 @@ namespace kumaS.Tracker.Dlib
         [SerializeField]
         internal bool isDebugPoint = true;
 
+        [SerializeField]
+        internal int interval = 0;
+
         public override string ProcessName { get; set; } = "Dlib 5 landmark detector";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
         public override string[] DebugKey { get => debugKey; }
@@ -30,29 +38,34 @@ namespace kumaS.Tracker.Dlib
         private string[] debugKey = default;
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private ShapePredictor[] predictor;
+        private volatile int skipped = 0;
+        private Rectangle box = default;
+        private readonly object boxLock = default;
 
         private readonly string Image_Width = nameof(Image_Width);
         private readonly string Image_Height = nameof(Image_Height);
         private string[] Point_X = default;
         private string[] Point_Y = default;
 
-        public override void InitInternal(int thread)
+        protected override void InitInternal(int thread)
         {
             predictor = new ShapePredictor[thread];
-            for(var i = 0; i < thread; i++)
+            for (var i = 0; i < thread; i++)
             {
                 predictor[i] = ShapePredictor.Deserialize(filePath);
             }
-            var key = new List<string>();
-            key.Add(SchedulableData<object>.Elapsed_Time);
-            key.Add(Image_Width);
-            key.Add(Image_Height);
+            var key = new List<string>
+            {
+                SchedulableData<object>.Elapsed_Time,
+                Image_Width,
+                Image_Height
+            };
             var px = new List<string>();
             var py = new List<string>();
-            for(var i = 0; i < 5; i++)
+            for (var i = 0; i < 5; i++)
             {
                 px.Add("Point" + i + "_X");
                 key.Add("Point" + i + "_X");
@@ -76,7 +89,7 @@ namespace kumaS.Tracker.Dlib
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
                 if (isDebugPoint)
                 {
-                    for(var i = 0; i < 5; i++)
+                    for (var i = 0; i < 5; i++)
                     {
                         message[Point_X[i]] = data.Data.Landmarks[i].X.ToString();
                         message[Point_Y[i]] = data.Data.Landmarks[i].Y.ToString();
@@ -95,21 +108,56 @@ namespace kumaS.Tracker.Dlib
                     return new SchedulableData<Dlib5Landmarks>(input, default);
                 }
 
+                Rectangle rect = default;
+                if (input.Data.Box == default)
+                {
+                    if (box == default)
+                    {
+                        return new SchedulableData<Dlib5Landmarks>(input, default, false, "BoundaryBoxがまだ来ていません。");
+                    }
+                    lock (boxLock)
+                    {
+                        rect = box;
+                    }
+                }
+                else
+                {
+                    rect = input.Data.Box.ToRectangle();
+                    lock (boxLock)
+                    {
+                        box = rect;
+                    }
+                }
+
+                if (skipped < interval)
+                {
+                    Interlocked.Increment(ref skipped);
+                    return new SchedulableData<Dlib5Landmarks>(input, new Dlib5Landmarks(input.Data.OriginalImage, default));
+                }
+
                 if (TryGetThread(out var thread))
                 {
+                    Interlocked.Exchange(ref skipped, 0);
                     try
                     {
-                        var origin = input.Data.OriginalImage;
-                        using (var image = DlibDotNet.Dlib.LoadImageData<BgrPixel>(origin.Data, (uint)origin.Height, (uint)origin.Width, (uint)(origin.Width * origin.ElemSize())))
+                        Mat origin = input.Data.OriginalImage;
+                        using (Array2D<BgrPixel> image = DlibDotNet.Dlib.LoadImageData<BgrPixel>(origin.Data, (uint)origin.Height, (uint)origin.Width, (uint)(origin.Width * origin.ElemSize())))
                         {
-                            DlibDotNet.Point[] points = new DlibDotNet.Point[5];
-                            using (FullObjectDetection shapes = predictor[thread].Detect(image, new Rectangle((int)input.Data.Box.x, (int)input.Data.Box.y, (int)input.Data.Box.xMax, (int)input.Data.Box.yMax)))
+                            var points = new DlibDotNet.Point[5];
+
+                            using (FullObjectDetection shapes = predictor[thread].Detect(image, rect))
                             {
                                 for (uint i = 0; i < 5; i++)
                                 {
                                     points[i] = shapes.GetPart(i);
                                 }
                             }
+                            var b = DlibExtentions.GetRect(points[4], points[0], points[2]).ToRectangle();
+                            lock (boxLock)
+                            {
+                                box = b;
+                            }
+
                             var ret = new Dlib5Landmarks(input.Data.OriginalImage, points);
                             return new SchedulableData<Dlib5Landmarks>(input, ret);
                         }
@@ -126,7 +174,7 @@ namespace kumaS.Tracker.Dlib
             }
             finally
             {
-                if(ResourceManager.isRelease(typeof(Mat), Id))
+                if (ResourceManager.isRelease(typeof(Mat), Id))
                 {
                     input.Data.OriginalImage.Dispose();
                 }

@@ -1,14 +1,20 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using kumaS.Tracker.Core;
-using System;
-using UniRx;
+﻿using kumaS.Tracker.Core;
+
 using OpenCvSharp;
+
+using System;
+using System.Collections.Generic;
+
+using UniRx;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Dlib
 {
-    public class Dlib68ToEyeRotationStream : ScheduleStreamBase<Dlib68Landmarks, EyeRotation>
+    /// <summary>
+    /// Dlibの68の特徴点から目線を取得するストリーム。
+    /// </summary>
+    public sealed class Dlib68ToEyeRotationStream : ScheduleStreamBase<Dlib68Landmarks, EyeRotation>
     {
         [SerializeField]
         internal Vector2 leftCenter = new Vector2(0.5f, 0.5f);
@@ -40,7 +46,7 @@ namespace kumaS.Tracker.Dlib
 
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private readonly string L_Eye_X = nameof(L_Eye_X);
         private readonly string L_Eye_Y = nameof(L_Eye_Y);
@@ -49,7 +55,8 @@ namespace kumaS.Tracker.Dlib
         private readonly string R_Eye_Y = nameof(R_Eye_Y);
         private readonly string R_Eye_Z = nameof(R_Eye_Z);
 
-        public override void InitInternal(int thread){
+        protected override void InitInternal(int thread)
+        {
             mirror = sourceIsMirror != wantMirror;
             isAvailable.Value = true;
         }
@@ -73,10 +80,10 @@ namespace kumaS.Tracker.Dlib
                 {
                     return new SchedulableData<EyeRotation>(input, default);
                 }
-                var predictedLeftCenter = PredictCenter(input.Data.OriginalImage, GetRect(input.Data.Landmarks, 42, 48));
-                var predictedRightCenter = PredictCenter(input.Data.OriginalImage, GetRect(input.Data.Landmarks, 36, 42));
-                var leftPoint = GetNormalizedPoint(input.Data.Landmarks[42].ToVector2(), input.Data.Landmarks[45].ToVector2(), predictedLeftCenter);
-                var rightPoint = GetNormalizedPoint(input.Data.Landmarks[36].ToVector2(), input.Data.Landmarks[39].ToVector2(), predictedRightCenter);
+                Vector2 predictedLeftCenter = PredictCenter(input.Data.OriginalImage, GetRect(input.Data.Landmarks, 42, 48));
+                Vector2 predictedRightCenter = PredictCenter(input.Data.OriginalImage, GetRect(input.Data.Landmarks, 36, 42));
+                Vector2 leftPoint = GetNormalizedPoint(input.Data.Landmarks[42].ToVector2(), input.Data.Landmarks[45].ToVector2(), predictedLeftCenter);
+                Vector2 rightPoint = GetNormalizedPoint(input.Data.Landmarks[36].ToVector2(), input.Data.Landmarks[39].ToVector2(), predictedRightCenter);
                 leftPoint -= leftCenter;
                 rightPoint -= rightCenter;
                 var left = Quaternion.Euler(-leftPoint.y * rotateScale, -leftPoint.x * rotateScale, 0);
@@ -84,7 +91,7 @@ namespace kumaS.Tracker.Dlib
 
                 if (mirror)
                 {
-                    var tmp = left;
+                    Quaternion tmp = left;
                     left = right;
                     right = tmp;
                     left.y *= -1;
@@ -97,12 +104,11 @@ namespace kumaS.Tracker.Dlib
             }
             finally
             {
-                if(ResourceManager.isRelease(typeof(Mat), Id))
+                if (ResourceManager.isRelease(typeof(Mat), Id))
                 {
                     input.Data.OriginalImage.Dispose();
                 }
             }
-
         }
 
         /// <summary>
@@ -118,13 +124,13 @@ namespace kumaS.Tracker.Dlib
             var yMin = int.MaxValue;
             var xMax = int.MinValue;
             var yMax = int.MinValue;
-            for(var i = start; i < end; i++)
+            for (var i = start; i < end; i++)
             {
-                if(input[i].X < xMin)
+                if (input[i].X < xMin)
                 {
                     xMin = input[i].X;
                 }
-                if(input[i].X > xMax)
+                if (input[i].X > xMax)
                 {
                     xMax = input[i].X;
                 }
@@ -149,15 +155,15 @@ namespace kumaS.Tracker.Dlib
         /// <returns>座標。</returns>
         private Vector2 PredictCenter(Mat originalImage, OpenCvSharp.Rect rect)
         {
-            var ret = Vector2.zero;
+            Vector2 ret = Vector2.zero;
             var roi = new Mat(originalImage, rect);
-            var monoRoi = roi.Split()[2];
-            using(var binary = new Mat())
-            using(var inverseBinary = new Mat())
+            Mat monoRoi = roi.Split()[2];
+            using (var binary = new Mat())
+            using (var inverseBinary = new Mat())
             {
                 Cv2.Threshold(monoRoi, binary, 0, 255, ThresholdTypes.Otsu);
                 Cv2.BitwiseNot(binary, inverseBinary);
-                var moment = inverseBinary.Moments(true);
+                Moments moment = inverseBinary.Moments(true);
                 ret.x = (float)(moment.M10 / moment.M00) + rect.X;
                 ret.y = (float)(moment.M01 / moment.M00) + rect.Y;
             }
@@ -173,11 +179,11 @@ namespace kumaS.Tracker.Dlib
         /// <returns>正規化された座標。</returns>
         private Vector2 GetNormalizedPoint(Vector2 root, Vector2 xAxiesEnd, Vector2 center)
         {
-            var xAxies = xAxiesEnd - root;
-            var c = center - root;
+            Vector2 xAxies = xAxiesEnd - root;
+            Vector2 c = center - root;
             var dot = Vector2.Dot(xAxies.normalized, c.normalized);
             var ret = new Vector2(dot, Mathf.Sqrt(1 - dot * dot));
-            if(xAxies.normalized.y > c.normalized.y)
+            if (xAxies.normalized.y > c.normalized.y)
             {
                 ret.y *= -1;
             }

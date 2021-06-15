@@ -1,17 +1,19 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using OpenCvSharp;
+﻿using OpenCvSharp;
+
 using System;
+using System.Collections.Generic;
+using System.Threading;
+
 using UniRx;
-using Cysharp.Threading.Tasks;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core
 {
     /// <summary>
     /// OpenCvを使い、バウンダリーボックスを検出する。
     /// </summary>
-    public class OpenCvBBStream : ScheduleStreamBase<Mat, BoundaryBox>
+    public sealed class OpenCvBBStream : ScheduleStreamBase<Mat, BoundaryBox>
     {
         [SerializeField]
         internal string filePath = "";
@@ -22,14 +24,18 @@ namespace kumaS.Tracker.Core
         [SerializeField]
         internal bool isDebugBox = true;
 
+        [SerializeField]
+        internal int interval = 0;
+
         private CascadeClassifier[] predictor;
+        private volatile int skipped = 0;
 
         public override string ProcessName { get; set; } = "OpenCvSharp BB predict";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
-        public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Image_Width), nameof(Image_Height), nameof(X), nameof(Y), nameof(Width), nameof(Height) };
+        public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Image_Width), nameof(Image_Height), nameof(X), nameof(Y), nameof(Width), nameof(Height), nameof(Angle) };
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private readonly string Image_Width = nameof(Image_Width);
         private readonly string Image_Height = nameof(Image_Height);
@@ -37,15 +43,17 @@ namespace kumaS.Tracker.Core
         private readonly string Y = nameof(Y);
         private readonly string Width = nameof(Width);
         private readonly string Height = nameof(Height);
+        private readonly string Angle = nameof(Angle);
 
-        public override void InitInternal(int thread)
+        protected override void InitInternal(int thread)
         {
             predictor = new CascadeClassifier[thread];
-            for(var i = 0; i < thread; i++)
+            for (var i = 0; i < thread; i++)
             {
                 predictor[i] = new CascadeClassifier();
-                if (!predictor[i].Load(filePath)){
-                    throw new ArgumentException("OpenCVのカスケード分類機のファイルを読み込めませんでした。");
+                if (!predictor[i].Load(filePath))
+                {
+                    new ArgumentException("カスケード分類のファイルを読み込めませんでした。");
                 }
             }
             isAvailable.Value = true;
@@ -60,11 +68,18 @@ namespace kumaS.Tracker.Core
                     return new SchedulableData<BoundaryBox>(input, default);
                 }
 
+                if (skipped < interval)
+                {
+                    Interlocked.Increment(ref skipped);
+                    return new SchedulableData<BoundaryBox>(input, new BoundaryBox(input.Data, default));
+                }
+
                 if (TryGetThread(out var thread))
                 {
+                    Interlocked.Exchange(ref skipped, 0);
                     try
                     {
-                        var box = predictor[thread].DetectMultiScale(input.Data);
+                        OpenCvSharp.Rect[] box = predictor[thread].DetectMultiScale(input.Data);
                         if (box.Length == 0)
                         {
                             return new SchedulableData<BoundaryBox>(input, default, false, "顔が検出されませんでした。");
@@ -99,12 +114,13 @@ namespace kumaS.Tracker.Core
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
-                if (isDebugBox)
+                if (isDebugBox && data.Data.Box != default)
                 {
                     message[X] = data.Data.Box.x.ToString();
                     message[Y] = data.Data.Box.y.ToString();
                     message[Width] = data.Data.Box.width.ToString();
                     message[Height] = data.Data.Box.height.ToString();
+                    message[Angle] = data.Data.Angle.ToString();
                 }
             }
             return new DebugMessage(data, message);

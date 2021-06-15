@@ -1,15 +1,17 @@
-﻿using System.Collections;
+﻿using kumaS.Tracker.Core;
+
 using System.Collections.Generic;
-using UnityEngine;
+
 using UnityEditor;
-using kumaS.Tracker.Core;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Dlib.Editor
 {
     [CustomEditor(typeof(Dlib68ToEyeRotationStream))]
     public class Dlib68ToEyeRotationStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {
@@ -52,7 +54,7 @@ namespace kumaS.Tracker.Dlib.Editor
             EditorGUILayout.LabelField("Convert setting", EditorStyles.boldLabel);
             using (new EditorGUI.IndentLevelScope())
             {
-                EditorGUILayout.PropertyField(property[nameof(Dlib68ToEyeRotationStream.sourceIsMirror)], new GUIContent("Is source mirror"));
+                EditorGUILayout.PropertyField(property[nameof(Dlib68ToEyeRotationStream.sourceIsMirror)], new GUIContent("Source is mirror"));
                 EditorGUILayout.PropertyField(property[nameof(Dlib68ToEyeRotationStream.wantMirror)], new GUIContent("Is mirror"));
                 property[nameof(Dlib68ToEyeRotationStream.rotateScale)].floatValue = EditorGUILayout.Slider("Rotate scale", property[nameof(Dlib68ToEyeRotationStream.rotateScale)].floatValue, 0, 1);
                 EditorGUILayout.PropertyField(property[nameof(Dlib68ToEyeRotationStream.leftCenter)], new GUIContent("Left center"));
@@ -60,6 +62,5 @@ namespace kumaS.Tracker.Dlib.Editor
             }
             serializedObject.ApplyModifiedProperties();
         }
-
     }
 }

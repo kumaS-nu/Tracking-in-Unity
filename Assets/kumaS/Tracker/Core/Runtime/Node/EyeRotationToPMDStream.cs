@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using Cysharp.Threading.Tasks;
 
-using Cysharp.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
 using UniRx;
 
@@ -13,7 +12,7 @@ namespace kumaS.Tracker.Core
     /// <summary>
     /// 目線をPMDに変換するストリーム。
     /// </summary>
-    public class EyeRotationToPMDStream : ScheduleStreamBase<EyeRotation, PredictedModelData>
+    public sealed class EyeRotationToPMDStream : ScheduleStreamBase<EyeRotation, PredictedModelData>
     {
         [SerializeField]
         internal bool isDebugRotation = true;
@@ -41,13 +40,13 @@ namespace kumaS.Tracker.Core
         private readonly string R_Eye_Y = nameof(R_Eye_Y);
         private readonly string R_Eye_Z = nameof(R_Eye_Z);
 
-        public override void InitInternal(int thread){ }
+        protected override void InitInternal(int thread) { }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<PredictedModelData> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if(data.IsSuccess && isDebugRotation)
+            if (data.IsSuccess && isDebugRotation)
             {
                 data.Data.ToDebugRotation(message, L_Eye, L_Eye_X, L_Eye_Y, L_Eye_Z);
                 data.Data.ToDebugRotation(message, R_Eye, R_Eye_X, R_Eye_Y, R_Eye_Z);
@@ -61,17 +60,19 @@ namespace kumaS.Tracker.Core
             {
                 return new SchedulableData<PredictedModelData>(input, default);
             }
-            
+
             return ProcessInternalAsync(input).ToObservable().Wait();
         }
 
         private async UniTask<SchedulableData<PredictedModelData>> ProcessInternalAsync(SchedulableData<EyeRotation> input)
         {
             await UniTask.SwitchToMainThread();
-            var rot = new Dictionary<string, Quaternion>();
-            rot[L_Eye] = input.Data.Left * forward.rotation;
-            rot[R_Eye] = input.Data.Right * forward.rotation;
-            var ret = new PredictedModelData(new Dictionary<string, Vector3>(), rot, new Dictionary<string, float>());
+            var rot = new Dictionary<string, Quaternion>
+            {
+                [L_Eye] = input.Data.Left * forward.rotation,
+                [R_Eye] = input.Data.Right * forward.rotation
+            };
+            var ret = new PredictedModelData(rotation: rot);
             return new SchedulableData<PredictedModelData>(input, ret);
         }
     }

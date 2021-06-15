@@ -1,5 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+
 using UnityEngine;
 
 namespace kumaS.Tracker.Core
@@ -15,7 +15,7 @@ namespace kumaS.Tracker.Core
         public Dictionary<string, Vector3> Position { get; }
 
         /// <summary>
-        /// 回転。ボーンの向く先がz軸・上がy軸とする。
+        /// 回転。ボーンの向く先がz軸とする。
         /// </summary>
         public Dictionary<string, Quaternion> Rotation { get; }
 
@@ -29,7 +29,7 @@ namespace kumaS.Tracker.Core
         /// </summary>
         public Dictionary<string, object> Option { get; }
 
-        public static string[] DefaultPositionList { get; } = { 
+        public static string[] DefaultPositionList { get; } = {
             "Root", "Head",
             "L_Shoulder", "R_Shoulder",
             "L_Elbow", "R_Elbow",
@@ -46,6 +46,7 @@ namespace kumaS.Tracker.Core
             "L_Hip", "R_Hip",
             "L_Knee", "R_Knee",
             "L_Ankle", "R_Ankle",
+            "Neck",
             "L_Eye", "R_Eye"
         };
         public static string[] DefaultParameterList { get; } = {
@@ -57,12 +58,43 @@ namespace kumaS.Tracker.Core
         /// <param name="rotation">回転。</param>
         /// <param name="parameter">ブレンドシェイプの値。</param>
         /// <param name="option">その他。</param>
-        public PredictedModelData(Dictionary<string, Vector3> position, Dictionary<string, Quaternion> rotation, Dictionary<string, float> parameter, Dictionary<string, object> option = null)
+        public PredictedModelData(Dictionary<string, Vector3> position = null, Dictionary<string, Quaternion> rotation = null, Dictionary<string, float> parameter = null, Dictionary<string, object> option = null)
         {
-            Position = position;
-            Rotation = rotation;
-            Parameter = parameter;
-            Option = option;
+            if (position == null)
+            {
+                Position = new Dictionary<string, Vector3>();
+            }
+            else
+            {
+                Position = position;
+            }
+
+            if (rotation == null)
+            {
+                Rotation = new Dictionary<string, Quaternion>();
+            }
+            else
+            {
+                Rotation = rotation;
+            }
+
+            if (parameter == null)
+            {
+                Parameter = new Dictionary<string, float>();
+            }
+            else
+            {
+                Parameter = parameter;
+            }
+
+            if (option == null)
+            {
+                Option = new Dictionary<string, object>();
+            }
+            else
+            {
+                Option = option;
+            }
         }
 
         /// <summary>
@@ -108,6 +140,20 @@ namespace kumaS.Tracker.Core
             if (Parameter != null && Parameter.ContainsKey(key))
             {
                 message[label] = Parameter[key].ToString();
+            }
+        }
+
+        /// <summary>
+        /// オプションのデバッグデータを追加する。
+        /// </summary>
+        /// <param name="message">追加する先。</param>
+        /// <param name="key">デバッグするキー。</param>
+        /// <param name="label">ラベル。</param>
+        public void ToDebugOption(Dictionary<string, string> message, string key, string label)
+        {
+            if (Option != null && Option.ContainsKey(key))
+            {
+                message[label] = Option[key].ToString();
             }
         }
 

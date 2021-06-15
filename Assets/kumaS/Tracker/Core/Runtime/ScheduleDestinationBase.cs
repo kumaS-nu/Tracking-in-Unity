@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
+
+using UniRx;
 
 using UnityEngine;
-using UniRx;
 
 namespace kumaS.Tracker.Core
 {
@@ -36,7 +36,7 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// 利用するデータ型。
         /// </summary>
-        public Type DestinationType { get { return typeof(SchedulableData<T>); } }
+        public Type DestinationType { get => typeof(T); }
 
         /// <summary>
         /// この段階での処理。メインスレッドが保証。

@@ -1,18 +1,22 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using DlibDotNet;
+
 using kumaS.Tracker.Core;
-using System;
-using UniRx;
+
 using OpenCvSharp;
-using DlibDotNet;
+
+using System;
+using System.Collections.Generic;
+
+using UniRx;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Dlib
 {
     /// <summary>
     /// Dlibの68の顔の特徴点を抽出するストリーム。
     /// </summary>
-    public class Dlib68Stream : ScheduleStreamBase<BoundaryBox, Dlib68Landmarks>
+    public sealed class Dlib68Stream : ScheduleStreamBase<BoundaryBox, Dlib68Landmarks>
     {
         [SerializeField]
         internal string filePath;
@@ -30,26 +34,30 @@ namespace kumaS.Tracker.Dlib
         private string[] debugKey = default;
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private ShapePredictor[] predictor;
+        private Rectangle box = default;
+        private readonly object boxLock = default;
 
         private readonly string Image_Width = nameof(Image_Width);
         private readonly string Image_Height = nameof(Image_Height);
         private string[] Point_X = default;
         private string[] Point_Y = default;
 
-        public override void InitInternal(int thread)
+        protected override void InitInternal(int thread)
         {
             predictor = new ShapePredictor[thread];
             for (var i = 0; i < thread; i++)
             {
                 predictor[i] = ShapePredictor.Deserialize(filePath);
             }
-            var key = new List<string>();
-            key.Add(SchedulableData<object>.Elapsed_Time);
-            key.Add(Image_Width);
-            key.Add(Image_Height);
+            var key = new List<string>
+            {
+                SchedulableData<object>.Elapsed_Time,
+                Image_Width,
+                Image_Height
+            };
             var px = new List<string>();
             var py = new List<string>();
             for (var i = 0; i < 68; i++)
@@ -95,20 +103,46 @@ namespace kumaS.Tracker.Dlib
                     return new SchedulableData<Dlib68Landmarks>(input, default);
                 }
 
+                Rectangle rect = default;
+                if (input.Data.Box == default)
+                {
+                    if (input.Data.Box == default)
+                    {
+                        return new SchedulableData<Dlib68Landmarks>(input, default, false, "BoundaryBoxがまだ来ていません。");
+                    }
+                    lock (boxLock)
+                    {
+                        rect = box;
+                    }
+                }
+                else
+                {
+                    rect = new Rectangle((int)input.Data.Box.x, (int)input.Data.Box.y, (int)input.Data.Box.xMax, (int)input.Data.Box.yMax);
+                    lock (boxLock)
+                    {
+                        box = rect;
+                    }
+                }
+
                 if (TryGetThread(out var thread))
                 {
                     try
                     {
-                        var origin = input.Data.OriginalImage;
-                        using (var image = DlibDotNet.Dlib.LoadImageData<BgrPixel>(origin.Data, (uint)origin.Height, (uint)origin.Width, (uint)(origin.Width * origin.ElemSize())))
+                        Mat origin = input.Data.OriginalImage;
+                        using (Array2D<BgrPixel> image = DlibDotNet.Dlib.LoadImageData<BgrPixel>(origin.Data, (uint)origin.Height, (uint)origin.Width, (uint)(origin.Width * origin.ElemSize())))
                         {
-                            DlibDotNet.Point[] points = new DlibDotNet.Point[68];
-                            using (FullObjectDetection shapes = predictor[thread].Detect(image, new Rectangle((int)input.Data.Box.x, (int)input.Data.Box.y, (int)input.Data.Box.xMax, (int)input.Data.Box.yMax)))
+                            var points = new DlibDotNet.Point[68];
+                            using (FullObjectDetection shapes = predictor[thread].Detect(image, rect))
                             {
                                 for (uint i = 0; i < 68; i++)
                                 {
                                     points[i] = shapes.GetPart(i);
                                 }
+                            }
+                            var b = DlibExtentions.GetRect(points[33], points[36], points[45]).ToRectangle();
+                            lock (boxLock)
+                            {
+                                box = b;
                             }
                             var ret = new Dlib68Landmarks(input.Data.OriginalImage, points);
                             return new SchedulableData<Dlib68Landmarks>(input, ret);

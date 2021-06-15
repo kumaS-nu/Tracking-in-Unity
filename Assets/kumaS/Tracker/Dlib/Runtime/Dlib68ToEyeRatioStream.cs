@@ -1,16 +1,18 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using kumaS.Tracker.Core;
+﻿using kumaS.Tracker.Core;
+
 using System;
+using System.Collections.Generic;
+
 using UniRx;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Dlib
 {
     /// <summary>
     /// Dlibの68の特徴点から目の比を抽出するストリーム。
     /// </summary>
-    public class Dlib68ToEyeRatioStream : ScheduleStreamBase<Dlib68Landmarks, EyeRatio>
+    public sealed class Dlib68ToEyeRatioStream : ScheduleStreamBase<Dlib68Landmarks, EyeRatio>
     {
         [SerializeField]
         internal bool isDebugRatio = true;
@@ -28,12 +30,13 @@ namespace kumaS.Tracker.Dlib
         public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(L_Eye_Ratio), nameof(R_Eye_Ratio) };
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private readonly string L_Eye_Ratio = nameof(L_Eye_Ratio);
         private readonly string R_Eye_Ratio = nameof(R_Eye_Ratio);
 
-        public override void InitInternal(int thread){
+        protected override void InitInternal(int thread)
+        {
             mirror = sourceIsMirror != wantMirror;
             isAvailable.Value = true;
         }
@@ -42,7 +45,7 @@ namespace kumaS.Tracker.Dlib
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if(data.IsSuccess && isDebugRatio)
+            if (data.IsSuccess && isDebugRatio)
             {
                 message[L_Eye_Ratio] = data.Data.Left.ToString();
                 message[R_Eye_Ratio] = data.Data.Right.ToString();

@@ -1,17 +1,17 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
+
 using UnityEditor;
-using kumaS.Tracker.Core;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
     [CustomEditor(typeof(StreamScheduler))]
     public class StreamSchedulerEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         [SerializeField]
         private int selected = -1;
@@ -45,17 +45,17 @@ namespace kumaS.Tracker.Core.Editor
         public override void OnInspectorGUI()
         {
             serializedObject.Update();
-            var sources = GetSerializedList(property[nameof(StreamScheduler.sources)]);
-            var streams = GetSerializedList(property[nameof(StreamScheduler.streams)]);
-            var destinations = GetSerializedList(property[nameof(StreamScheduler.destinations)]);
-            var units = GetSerializedListInt(property[nameof(StreamScheduler.streamUnitStarts)]);
-            var inputs = GetSerializedListInt(property[nameof(StreamScheduler.streamInputs)]);
-            var outputs = GetSerializedListInt(property[nameof(StreamScheduler.streamOutputs)]);
-            var folds = GetSerializedListBool(property[nameof(StreamScheduler.streamFolds)]);
-            var fpss = GetSerializedListInt(property[nameof(StreamScheduler.fps)]);
-            var fpssInfo = GetFpss(inputs);
+            List<MonoBehaviour> sources = GetSerializedList(property[nameof(StreamScheduler.sources)]);
+            List<MonoBehaviour> streams = GetSerializedList(property[nameof(StreamScheduler.streams)]);
+            List<MonoBehaviour> destinations = GetSerializedList(property[nameof(StreamScheduler.destinations)]);
+            List<int> units = GetSerializedListInt(property[nameof(StreamScheduler.streamUnitStarts)]);
+            List<int> inputs = GetSerializedListInt(property[nameof(StreamScheduler.streamInputs)]);
+            List<int> outputs = GetSerializedListInt(property[nameof(StreamScheduler.streamOutputs)]);
+            List<bool> folds = GetSerializedListBool(property[nameof(StreamScheduler.streamFolds)]);
+            List<int> fpss = GetSerializedListInt(property[nameof(StreamScheduler.fps)]);
+            List<(int index, int source)> fpssInfo = GetFpss(inputs);
 
-            var defaultColor = GUI.backgroundColor;
+            Color defaultColor = GUI.backgroundColor;
             var selectable = new List<Rect>();
             var counter = 0;
 
@@ -199,7 +199,7 @@ namespace kumaS.Tracker.Core.Editor
                                         newStreamNodeObjects[i] = null;
                                         if (now == next)
                                         {
-                                            var del = fpssInfo.Where(value => value.index == i);
+                                            IEnumerable<(int index, int source)> del = fpssInfo.Where(value => value.index == i);
                                             if (del.Any())
                                             {
                                                 var delIdx = fpssInfo.IndexOf(del.First());
@@ -210,7 +210,7 @@ namespace kumaS.Tracker.Core.Editor
                                         }
                                         outputs[i] = 0;
                                     };
-                                    var acceptType = now == next ? null : ((IScheduleStream)property[nameof(StreamScheduler.streams)].GetArrayElementAtIndex(next - 1).objectReferenceValue).OutputType;
+                                    Type acceptType = now == next ? null : ((IScheduleStream)property[nameof(StreamScheduler.streams)].GetArrayElementAtIndex(next - 1).objectReferenceValue).OutputType;
                                     DeleteButton(now != next, DeleteStreamNode);
                                     newStreamNodeObjects[i] = AddNodeForm("stream node", newStreamNodeObjects[i], typeof(IScheduleStream), AddStreamNode, acceptType);
                                     selectable.Add(scope.rect);
@@ -333,8 +333,8 @@ namespace kumaS.Tracker.Core.Editor
                         EditorGUILayout.LabelField("Destination", GUILayout.Width(75));
                     }
 
-                    var beforeInputs = GetSerializedListInt(property[nameof(StreamScheduler.streamInputs)]);
-                    var beforeOutputs = GetSerializedListInt(property[nameof(StreamScheduler.streamOutputs)]);
+                    List<int> beforeInputs = GetSerializedListInt(property[nameof(StreamScheduler.streamInputs)]);
+                    List<int> beforeOutputs = GetSerializedListInt(property[nameof(StreamScheduler.streamOutputs)]);
                     for (var i = 0; i < property[nameof(StreamScheduler.streamUnitStarts)].arraySize; i++)
                     {
                         var index = property[nameof(StreamScheduler.streamUnitStarts)].GetArrayElementAtIndex(i).intValue;
@@ -357,13 +357,13 @@ namespace kumaS.Tracker.Core.Editor
                         outputs = beforeOutputs;
                     }
 
-                    var fpssInfoAfter = GetFpss(inputs);
+                    List<(int index, int source)> fpssInfoAfter = GetFpss(inputs);
                     UpdateFpss(fpss, fpssInfo, fpssInfoAfter);
                 }
 
                 #endregion
             }
-            var e = Event.current;
+            Event e = Event.current;
             if (e.type == EventType.MouseDown)
             {
                 for (var i = 0; i < selectable.Count; i++)
@@ -455,7 +455,7 @@ namespace kumaS.Tracker.Core.Editor
                 using (new EditorGUILayout.HorizontalScope())
                 {
                     newObject = (MonoBehaviour)EditorGUILayout.ObjectField(newObject, typeof(MonoBehaviour), true);
-                    var newNodes = newObject == null ? new Component[0] : newObject.GetComponents(acceptInterface);
+                    Component[] newNodes = newObject == null ? new Component[0] : newObject.GetComponents(acceptInterface);
                     if (acceptType != null)
                     {
                         newNodes = newNodes.Where(node => ((IScheduleStream)node).InputType == acceptType).ToArray();
@@ -505,7 +505,8 @@ namespace kumaS.Tracker.Core.Editor
 
             for (var j = 0; j < property[nameof(StreamScheduler.sources)].arraySize; j++)
             {
-                if (allowSourceType == null || ((IScheduleSource)property[nameof(StreamScheduler.sources)].GetArrayElementAtIndex(j).objectReferenceValue).SourceType == allowSourceType)
+                Type sourceType = ((IScheduleSource)property[nameof(StreamScheduler.sources)].GetArrayElementAtIndex(j).objectReferenceValue).SourceType;
+                if (allowSourceType == null || sourceType == allowSourceType)
                 {
                     sourceLabel.Add("Source " + j);
                 }
@@ -514,7 +515,12 @@ namespace kumaS.Tracker.Core.Editor
             for (var j = 0; j < property[nameof(StreamScheduler.streamUnitStarts)].arraySize; j++)
             {
                 var nI = j + 1 == property[nameof(StreamScheduler.streamUnitStarts)].arraySize ? property[nameof(StreamScheduler.streams)].arraySize : property[nameof(StreamScheduler.streamUnitStarts)].GetArrayElementAtIndex(j + 1).intValue;
-                if (nI != property[nameof(StreamScheduler.streamUnitStarts)].GetArrayElementAtIndex(j).intValue && (allowSourceType == null || ((IScheduleStream)property[nameof(StreamScheduler.streams)].GetArrayElementAtIndex(nI - 1).objectReferenceValue).OutputType == allowSourceType))
+                if (nI == property[nameof(StreamScheduler.streamUnitStarts)].GetArrayElementAtIndex(j).intValue)
+                {
+                    continue;
+                }
+                Type outputType = ((IScheduleStream)property[nameof(StreamScheduler.streams)].GetArrayElementAtIndex(nI - 1).objectReferenceValue).OutputType;
+                if (allowSourceType == null || outputType == allowSourceType)
                 {
                     sourceLabel.Add("Stream " + j);
                 }
@@ -544,7 +550,8 @@ namespace kumaS.Tracker.Core.Editor
 
             for (var j = 0; j < property[nameof(StreamScheduler.destinations)].arraySize; j++)
             {
-                if (allowType == null || ((IScheduleDestination)property[nameof(StreamScheduler.destinations)].GetArrayElementAtIndex(j).objectReferenceValue).DestinationType == allowType)
+                Type destinationType = ((IScheduleDestination)property[nameof(StreamScheduler.destinations)].GetArrayElementAtIndex(j).objectReferenceValue).DestinationType;
+                if (allowType == null || destinationType == allowType)
                 {
                     destinationLabel.Add("Destination " + j);
                 }
@@ -553,7 +560,12 @@ namespace kumaS.Tracker.Core.Editor
             for (var j = 0; j < property[nameof(StreamScheduler.streamUnitStarts)].arraySize; j++)
             {
                 var nO = j + 1 == property[nameof(StreamScheduler.streamUnitStarts)].arraySize ? property[nameof(StreamScheduler.streams)].arraySize : property[nameof(StreamScheduler.streamUnitStarts)].GetArrayElementAtIndex(j + 1).intValue;
-                if (nO != property[nameof(StreamScheduler.streamUnitStarts)].GetArrayElementAtIndex(j).intValue && (allowType == null || ((IScheduleStream)property[nameof(StreamScheduler.streams)].GetArrayElementAtIndex(property[nameof(StreamScheduler.streamUnitStarts)].GetArrayElementAtIndex(j).intValue).objectReferenceValue).InputType == allowType))
+                if (nO == property[nameof(StreamScheduler.streamUnitStarts)].GetArrayElementAtIndex(j).intValue)
+                {
+                    continue;
+                }
+                Type inputType = ((IScheduleStream)property[nameof(StreamScheduler.streams)].GetArrayElementAtIndex(property[nameof(StreamScheduler.streamUnitStarts)].GetArrayElementAtIndex(j).intValue).objectReferenceValue).InputType;
+                if (allowType == null || inputType == allowType)
                 {
                     destinationLabel.Add("Stream " + j);
                 }
@@ -568,8 +580,8 @@ namespace kumaS.Tracker.Core.Editor
             var ai = 0;
             while (bi < fpssInfo.Count || ai < fpssInfoAfter.Count)
             {
-                var bIdx = fpssInfo.Count == 0 ? int.MaxValue : bi == fpssInfo.Count ? int.MinValue : fpssInfo[bi].index;
-                var aIdx = fpssInfoAfter.Count == 0 ? int.MaxValue : ai == fpssInfoAfter.Count ? int.MinValue : fpssInfoAfter[ai].index;
+                var bIdx = bi == fpssInfo.Count ? int.MaxValue : fpssInfo[bi].index;
+                var aIdx = ai == fpssInfoAfter.Count ? int.MaxValue : fpssInfoAfter[ai].index;
                 if (bIdx == aIdx)
                 {
                     if (bi >= 0 && bi < fpssInfo.Count && ai >= 0 && ai < fpssInfoAfter.Count && fpssInfo[bi].source != fpssInfoAfter[ai].source)

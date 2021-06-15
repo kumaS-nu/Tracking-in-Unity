@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
+
 using UniRx;
-using System;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core
 {
@@ -12,12 +13,12 @@ namespace kumaS.Tracker.Core
     /// </summary>
     internal class StreamBuilder
     {
-        private List<IScheduleSource> sources;
-        private List<IScheduleStream> streams;
-        private List<IScheduleDestination> destinations;
-        private List<int> streamUnitStarts;
-        private List<int> streamInputs;
-        private List<int> streamOutputs;
+        private readonly List<IScheduleSource> sources;
+        private readonly List<IScheduleStream> streams;
+        private readonly List<IScheduleDestination> destinations;
+        private readonly List<int> streamUnitStarts;
+        private readonly List<int> streamInputs;
+        private readonly List<int> streamOutputs;
 
         internal StreamBuilder(List<MonoBehaviour> source, List<MonoBehaviour> stream, List<MonoBehaviour> destination, List<int> streamUnitStart, List<int> streamInput, List<int> streamOutput)
         {
@@ -42,7 +43,7 @@ namespace kumaS.Tracker.Core
             {
                 var schedulable = start.Schedulable;
                 start.SourceStream = ((IScheduleSource)schedulable).GetStream();
-                start.TryGetSourceStream(out var stream);
+                start.TryGetSourceStream(out Subject<object> stream);
                 start.MainStream = stream.Share();
                 allNodes.Add(start);
                 start.StartId.Add(allNodes.IndexOf(start));
@@ -65,7 +66,7 @@ namespace kumaS.Tracker.Core
             var streamNodes = new List<List<StreamNode>>();
             var destinationNodes = new List<StreamNode>();
 
-            foreach (var stream in streams)
+            foreach (IScheduleStream stream in streams)
             {
                 if (streamUnitStarts.Contains(streams.IndexOf(stream)))
                 {
@@ -75,7 +76,7 @@ namespace kumaS.Tracker.Core
                 var node = new StreamNode(stream);
                 if (streamNodes.Last().Any())
                 {
-                    var previous = streamNodes.Last().Last();
+                    StreamNode previous = streamNodes.Last().Last();
                     previous.Next.Add(node);
                     node.Previous.Add(previous);
                 }
@@ -91,8 +92,8 @@ namespace kumaS.Tracker.Core
             {
                 if (streamInputs[i] > 0)
                 {
-                    var previousNode = streamNodes[streamInputs[i] - 1].Last();
-                    var nextNode = streamNodes[i].First();
+                    StreamNode previousNode = streamNodes[streamInputs[i] - 1].Last();
+                    StreamNode nextNode = streamNodes[i].First();
                     if (!nextNode.Previous.Any(node => node == previousNode))
                     {
                         previousNode.Next.Add(nextNode);
@@ -109,8 +110,8 @@ namespace kumaS.Tracker.Core
 
                 if (streamOutputs[i] > 0)
                 {
-                    var previousNode = streamNodes[i].Last();
-                    var nextNode = streamNodes[streamOutputs[i] - 1].First();
+                    StreamNode previousNode = streamNodes[i].Last();
+                    StreamNode nextNode = streamNodes[streamOutputs[i] - 1].First();
                     if (!previousNode.Next.Any(node => node != nextNode))
                     {
                         previousNode.Next.Add(nextNode);
@@ -119,7 +120,7 @@ namespace kumaS.Tracker.Core
                 }
                 else if (streamOutputs[i] < 0)
                 {
-                    var node = destinationNodes[-1 - streamOutputs[i]];
+                    StreamNode node = destinationNodes[-1 - streamOutputs[i]];
                     streamNodes[i].Last().Next.Add(node);
                     node.Previous.Add(streamNodes[i].Last());
                 }
@@ -135,7 +136,7 @@ namespace kumaS.Tracker.Core
         internal void BuildStream(StreamNode node, List<StreamNode> allNodes, GameObject scheduler)
         {
             allNodes.Add(node);
-            if (!node.Previous.All(previous => previous.TryGetMainStream(out var _)))
+            if (!node.Previous.All(previous => previous.TryGetMainStream(out IObservable<object> _)))
             {
                 return;
             }
@@ -144,9 +145,9 @@ namespace kumaS.Tracker.Core
             var streams = new List<IObservable<object>>();
             if (node.Previous.Count > 1)
             {
-                foreach (var previous in node.Previous)
+                foreach (StreamNode previous in node.Previous)
                 {
-                    previous.TryGetMainStream(out var s);
+                    previous.TryGetMainStream(out IObservable<object> s);
                     streams.Add(s);
                     node.StartId.AddRange(previous.StartId);
                 }

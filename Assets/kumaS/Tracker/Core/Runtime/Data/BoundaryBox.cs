@@ -1,7 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using OpenCvSharp;
+
 using UnityEngine;
-using OpenCvSharp;
 
 namespace kumaS.Tracker.Core
 {
@@ -26,15 +25,22 @@ namespace kumaS.Tracker.Core
         public Vector2Int ImageSize { get; }
 
         /// <summary>
+        /// 顔の回転。単位はdeg。（°）
+        /// </summary>
+        public float Angle { get; }
+
+        /// <summary>
         /// 元画像がある際のコンストラクタ。
         /// </summary>
         /// <param name="originalImage">元画像。</param>
         /// <param name="box">バウンダリーボックス。</param>
-        public BoundaryBox(Mat originalImage, UnityEngine.Rect box)
+        /// <param name="angle">顔の回転。単位はdeg。</param>
+        public BoundaryBox(Mat originalImage, UnityEngine.Rect box, float angle = 0)
         {
             OriginalImage = originalImage;
             Box = box;
             ImageSize = new Vector2Int(originalImage.Width, originalImage.Height);
+            Angle = angle;
         }
 
         /// <summary>
@@ -42,11 +48,13 @@ namespace kumaS.Tracker.Core
         /// </summary>
         /// <param name="imageSize">元画像の大きさ。</param>
         /// <param name="box">バウンダリーボックス。</param>
-        public BoundaryBox(Vector2Int imageSize, UnityEngine.Rect box)
+        /// <param name="angle">顔の回転。単位はdeg。</param>
+        public BoundaryBox(Vector2Int imageSize, UnityEngine.Rect box, float angle = 0)
         {
             OriginalImage = null;
             Box = box;
             ImageSize = imageSize;
+            Angle = angle;
         }
     }
 }

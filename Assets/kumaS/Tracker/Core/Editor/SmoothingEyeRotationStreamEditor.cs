@@ -1,14 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
+
 using UnityEditor;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
     [CustomEditor(typeof(SmoothingEyeRotationStream))]
     public class SmoothingEyeRotationStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {

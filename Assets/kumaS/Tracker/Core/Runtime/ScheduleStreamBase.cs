@@ -1,10 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Cysharp.Threading.Tasks;
+
+using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using UnityEngine;
+
 using UniRx;
-using Cysharp.Threading.Tasks;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core
 {
@@ -38,7 +40,7 @@ namespace kumaS.Tracker.Core
         /// <value>
         /// スレッドが開くのを待つキュー。
         /// </value>
-        private ConcurrentQueue<CancellationTokenSource> waitingQueue = new ConcurrentQueue<CancellationTokenSource>();
+        private readonly ConcurrentQueue<CancellationTokenSource> waitingQueue = new ConcurrentQueue<CancellationTokenSource>();
 
         /// <value>
         /// デバッグ出力をするか。
@@ -48,7 +50,7 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// デバッグ出力をするか。
         /// </summary>
-        public IReadOnlyReactiveProperty<bool> IsDebug { get { return isDebug; } }
+        public IReadOnlyReactiveProperty<bool> IsDebug { get => isDebug; }
 
         /// <summary>
         /// デバッグで出力するデータのキーを取得できるようにする。
@@ -63,12 +65,12 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// 入力のデータ型。
         /// </summary>
-        public Type InputType { get { return typeof(SchedulableData<TInput>); } }
+        public Type InputType { get => typeof(TInput); }
 
         /// <summary>
         /// 出力するデータ型。（ストリーム）
         /// </summary>
-        public Type OutputType { get { return typeof(SchedulableData<TOutput>); } }
+        public Type OutputType { get => typeof(TOutput); }
 
         /// <summary>
         /// 初期化。
@@ -89,7 +91,7 @@ namespace kumaS.Tracker.Core
         /// 派生クラスではここに初期化処理を書く。初期化が終わったら利用可能にするのを忘れずに。
         /// </summary>
         /// <param name="thread">用意するスレッド数。</param>
-        public abstract void InitInternal(int thread);
+        protected abstract void InitInternal(int thread);
 
         /// <summary>
         /// 処理をするプロセス。

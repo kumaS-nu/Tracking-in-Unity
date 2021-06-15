@@ -1,16 +1,17 @@
-﻿using System.Collections;
+﻿using OpenCvSharp;
+
 using System.Collections.Generic;
-using UnityEngine;
+
 using UnityEditor;
-using OpenCvSharp;
-using System;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
     [CustomEditor(typeof(ResizeMatStream))]
     public class ResizeMatStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
         private string[] interpolationLabel;
 
         private void OnEnable()
@@ -18,10 +19,10 @@ namespace kumaS.Tracker.Core.Editor
             property[nameof(ResizeMatStream.isDebug)] = serializedObject.FindProperty(nameof(ResizeMatStream.isDebug));
             property[nameof(ResizeMatStream.ratio)] = serializedObject.FindProperty(nameof(ResizeMatStream.ratio));
             property[nameof(ResizeMatStream.interpolation)] = serializedObject.FindProperty(nameof(ResizeMatStream.interpolation));
-            if(interpolationLabel == null)
+            if (interpolationLabel == null)
             {
                 interpolationLabel = new string[6];
-                for(var i = 0; i < 6; i++)
+                for (var i = 0; i < 6; i++)
                 {
                     interpolationLabel[i] = ((InterpolationFlags)i).ToString();
                 }
@@ -43,7 +44,7 @@ namespace kumaS.Tracker.Core.Editor
                 using (new EditorGUILayout.VerticalScope())
                 {
                     EditorGUILayout.LabelField(new GUIContent("Apache License 2.0", "by OpenCV, OpenCvSharp"), EditorStyles.linkLabel);
-                    var rect = GUILayoutUtility.GetLastRect();
+                    UnityEngine.Rect rect = GUILayoutUtility.GetLastRect();
                     EditorGUIUtility.AddCursorRect(rect, MouseCursor.Link);
                     Event nowEvent = Event.current;
                     if (nowEvent.type == EventType.MouseDown && rect.Contains(nowEvent.mousePosition))

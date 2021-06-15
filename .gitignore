@@ -59,7 +59,7 @@ sysinfo.txt
 crashlytics-build.properties
 
 /[Aa]ssets/Live2D/
-/Assets/Live2D.meta
+/[Aa]ssets/Live2D.meta
 
 /[Aa]ssets/Packages/
 /[Aa]ssets/Packages.meta
@@ -67,5 +67,5 @@ crashlytics-build.properties
 /[Aa]ssets/packages.config.meta
 /[Aa]ssets/rootPackages.xml
 /[Aa]ssets/rootPackages.xml.meta
-Assets/Debug data.meta
-Assets/Debug data
+[Aa]ssets/Debug data.meta
+[Aa]ssets/Debug data

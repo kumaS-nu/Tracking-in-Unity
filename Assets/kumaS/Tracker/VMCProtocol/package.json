@@ -1,0 +1,12 @@
+{
+    "name": "org.kumas.tracker-vmc-protocol",
+    "version": "0.1.0",
+    "displayName": "Tracker.VMCProtocol",
+    "description": "A library that uses VMC protocol, a platform for tracking with webcams, etc.",
+    "unity": "2019.4",
+    "author": {
+        "name": "kumaS",
+        "email": "kumas.kumachan@gmail.com",
+        "url": "https://github.com/kumaS-nu/Tracker-in-Unity"
+    }
+}

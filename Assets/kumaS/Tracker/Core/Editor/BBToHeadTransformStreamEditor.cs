@@ -1,14 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
+
 using UnityEditor;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
     [CustomEditor(typeof(BBToHeadTransformStream))]
     public class BBToHeadTransformStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {
@@ -51,7 +52,7 @@ namespace kumaS.Tracker.Core.Editor
             EditorGUILayout.LabelField("Convert setting", EditorStyles.boldLabel);
             using (new EditorGUI.IndentLevelScope())
             {
-                EditorGUILayout.PropertyField(property[nameof(BBToHeadTransformStream.sourceIsMirror)], new GUIContent("Is source mirror"));
+                EditorGUILayout.PropertyField(property[nameof(BBToHeadTransformStream.sourceIsMirror)], new GUIContent("Source is mirror"));
                 EditorGUILayout.PropertyField(property[nameof(BBToHeadTransformStream.wantMirror)], new GUIContent("Is mirror"));
                 property[nameof(BBToHeadTransformStream.moveScale)].floatValue = EditorGUILayout.Slider("Move scale", property[nameof(BBToHeadTransformStream.moveScale)].floatValue, 0, 1);
                 EditorGUILayout.PropertyField(property[nameof(BBToHeadTransformStream.isEnableDepth)], new GUIContent("Enable depth"));

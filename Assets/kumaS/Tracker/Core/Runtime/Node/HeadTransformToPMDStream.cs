@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using Cysharp.Threading.Tasks;
 
-using Cysharp.Threading.Tasks;
+using System;
+using System.Collections.Generic;
 
 using UniRx;
 
@@ -13,7 +12,7 @@ namespace kumaS.Tracker.Core
     /// <summary>
     /// 頭の位置・回転をPMDにするストリーム。
     /// </summary>
-    public class HeadTransformToPMDStream : ScheduleStreamBase<HeadTransform, PredictedModelData>
+    public sealed class HeadTransformToPMDStream : ScheduleStreamBase<HeadTransform, PredictedModelData>
     {
         [SerializeField]
         internal bool isDebugHead = true;
@@ -38,7 +37,7 @@ namespace kumaS.Tracker.Core
         private readonly string Head_Rot_Y = nameof(Head_Rot_Y);
         private readonly string Head_Rot_Z = nameof(Head_Rot_Z);
 
-        public override void InitInternal(int thread) { }
+        protected override void InitInternal(int thread) { }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<PredictedModelData> data)
         {
@@ -58,18 +57,22 @@ namespace kumaS.Tracker.Core
             {
                 return new SchedulableData<PredictedModelData>(input, default);
             }
-            
+
             return ProcessInternalAsync(input).ToObservable().Wait();
         }
 
         private async UniTask<SchedulableData<PredictedModelData>> ProcessInternalAsync(SchedulableData<HeadTransform> input)
         {
             await UniTask.SwitchToMainThread();
-            var pos = new Dictionary<string, Vector3>();
-            pos[Head] = center.TransformPoint(input.Data.Position);
-            var rot = new Dictionary<string, Quaternion>();
-            rot[Head] = input.Data.Rotation * center.rotation;
-            var ret = new PredictedModelData(pos, rot, new Dictionary<string, float>());
+            var pos = new Dictionary<string, Vector3>
+            {
+                [Head] = center.TransformPoint(input.Data.Position)
+            };
+            var rot = new Dictionary<string, Quaternion>
+            {
+                [Head] = input.Data.Rotation * center.rotation
+            };
+            var ret = new PredictedModelData(pos, rot);
             return new SchedulableData<PredictedModelData>(input, ret);
         }
     }

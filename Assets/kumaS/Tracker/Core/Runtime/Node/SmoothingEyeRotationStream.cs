@@ -1,7 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-
-using Cysharp.Threading.Tasks;
+﻿using System.Collections.Generic;
 
 using UnityEngine;
 
@@ -10,7 +7,7 @@ namespace kumaS.Tracker.Core
     /// <summary>
     /// 目線を滑らかにするストリーム。
     /// </summary>
-    public class SmoothingEyeRotationStream : SmoothingStreamBase<EyeRotation>
+    public sealed class SmoothingEyeRotationStream : SmoothingStreamBase<EyeRotation>
     {
         [SerializeField]
         internal bool isDebugRotation = true;
@@ -66,10 +63,10 @@ namespace kumaS.Tracker.Core
 
         protected override EyeRotation Average(EyeRotation[] datas)
         {
-            var logLotationL = Vector3.zero;
-            var logLotationR = Vector3.zero;
-            var averageL = Quaternion.identity;
-            var averageR = Quaternion.identity;
+            Vector3 logLotationL = Vector3.zero;
+            Vector3 logLotationR = Vector3.zero;
+            Quaternion averageL = datas[0].Left;
+            Quaternion averageR = datas[0].Right;
 
             if (lastOutput != default)
             {
@@ -79,14 +76,14 @@ namespace kumaS.Tracker.Core
             var inverseL = Quaternion.Inverse(averageL);
             var inverseR = Quaternion.Inverse(averageR);
 
-            foreach (var data in datas)
+            foreach (EyeRotation data in datas)
             {
-                logLotationL += (data.Left * inverseL).ToLogQuaternion();
-                logLotationR += (data.Right * inverseR).ToLogQuaternion();
+                logLotationL += (inverseL * data.Left).ToLogQuaternion();
+                logLotationR += (inverseR * data.Right).ToLogQuaternion();
             }
             logLotationL /= datas.Length;
             logLotationR /= datas.Length;
-            return new EyeRotation(logLotationL.ToQuaternion() * averageL, logLotationR.ToQuaternion() * averageR);
+            return new EyeRotation(averageL * logLotationL.ToQuaternion(), averageR * logLotationR.ToQuaternion());
         }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<EyeRotation> data)
@@ -102,27 +99,27 @@ namespace kumaS.Tracker.Core
 
         protected override bool ValidateData(EyeRotation input)
         {
-            var left = input.Left.eulerAngles;
+            Vector3 left = input.Left.eulerAngles;
             if (left.x > rotateRangeLXMax && left.x < 360 - rotateRangeLXMin)
             {
                 return false;
             }
-            if(left.y < rotateRangeLYMax && left.y < 360 - rotateRangeLYMin)
+            if (left.y < rotateRangeLYMax && left.y < 360 - rotateRangeLYMin)
             {
                 return false;
             }
 
-            var right = input.Right.eulerAngles;
-            if(right.x > rotateRangeRXMax && right.x < 360 - rotateRangeRXMin)
+            Vector3 right = input.Right.eulerAngles;
+            if (right.x > rotateRangeRXMax && right.x < 360 - rotateRangeRXMin)
             {
                 return false;
             }
-            if(right.y > rotateRangeRYMax && right.y < 360 - rotateRangeRYMin)
+            if (right.y > rotateRangeRYMax && right.y < 360 - rotateRangeRYMin)
             {
                 return false;
             }
 
-            if(Quaternion.Angle(lastOutput.Left, input.Left) > rotateSpeedLimitInternal)
+            if (Quaternion.Angle(lastOutput.Left, input.Left) > rotateSpeedLimitInternal)
             {
                 return false;
             }

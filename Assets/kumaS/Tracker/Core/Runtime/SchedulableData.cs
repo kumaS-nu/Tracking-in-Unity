@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace kumaS.Tracker.Core
 {
@@ -14,7 +12,7 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// このデータは成功しているか。
         /// </summary>
-        public  bool IsSuccess { get; private set; }
+        public bool IsSuccess { get; private set; }
 
         /// <summary>
         /// エラー内容。
@@ -63,7 +61,7 @@ namespace kumaS.Tracker.Core
             SourceId = input.SourceId;
             ElapsedTimes = new List<TimeSpan>(input.ElapsedTimes);
             var elapsedtick = 0L;
-            foreach(var elapsed in ElapsedTimes)
+            foreach (TimeSpan elapsed in ElapsedTimes)
             {
                 elapsedtick += elapsed.Ticks;
             }
@@ -85,8 +83,10 @@ namespace kumaS.Tracker.Core
             ErrorMessage = errorMessage;
             StartTime = startTime;
             SourceId = id;
-            ElapsedTimes = new List<TimeSpan>();
-            ElapsedTimes.Add(DateTime.Now - startTime);
+            ElapsedTimes = new List<TimeSpan>
+            {
+                DateTime.Now - startTime
+            };
             Data = data;
         }
 

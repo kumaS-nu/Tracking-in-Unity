@@ -1,14 +1,14 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using kumaS.Tracker.Core;
+﻿using System.Collections.Generic;
+
 using UnityEditor;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
     public class HeadTransformToPMDStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {

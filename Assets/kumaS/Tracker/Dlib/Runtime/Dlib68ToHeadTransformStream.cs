@@ -1,18 +1,21 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using kumaS.Tracker.Core;
-using System;
-using UniRx;
+﻿using kumaS.Tracker.Core;
+
 using OpenCvSharp;
+
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+
+using UniRx;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Dlib
 {
     /// <summary>
     /// Dlibの68つの顔の特徴点から頭の位置・回転に変換するストリーム。
     /// </summary>
-    public class Dlib68ToHeadTransformStream : ScheduleStreamBase<Dlib68Landmarks, HeadTransform>
+    public sealed class Dlib68ToHeadTransformStream : ScheduleStreamBase<Dlib68Landmarks, HeadTransform>
     {
         [SerializeField]
         internal float moveScale = 1;
@@ -57,8 +60,8 @@ namespace kumaS.Tracker.Dlib
         private bool mirror = true;
 
         private Mat realPoints;
-        private Mat distCoeffs = new Mat();
-        private Mat cameraMatrix = new Mat(3, 3, MatType.CV_32FC1);
+        private readonly Mat distCoeffs = new Mat();
+        private readonly Mat cameraMatrix = new Mat(3, 3, MatType.CV_32FC1);
         private Vector2Int currentSize = Vector2Int.zero;
 
         // カメラと正面を向いてるから、y軸周りに180度回転させるクォータニオン。
@@ -73,7 +76,7 @@ namespace kumaS.Tracker.Dlib
         };
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private readonly string Head = nameof(Head);
         private readonly string Head_Pos_X = nameof(Head_Pos_X);
@@ -83,7 +86,7 @@ namespace kumaS.Tracker.Dlib
         private readonly string Head_Rot_Y = nameof(Head_Rot_Y);
         private readonly string Head_Rot_Z = nameof(Head_Rot_Z);
 
-        public override void InitInternal(int thread)
+        protected override void InitInternal(int thread)
         {
             var points = new Point3f[8];
             for (var i = 0; i < 8; i++)
@@ -119,12 +122,12 @@ namespace kumaS.Tracker.Dlib
                 Marshal.Copy(camera, 0, cameraMatrix.Data, 9);
             }
 
-            var predictPoints = ExtractPoint(input.Data.Landmarks);
+            Mat predictPoints = ExtractPoint(input.Data.Landmarks);
             var rvec = new Mat();
             var tvec = new Mat();
             Cv2.SolvePnP(realPoints, predictPoints, cameraMatrix, distCoeffs, rvec, tvec);
-            var pos = GetPosition(tvec) * moveScale;
-            var rot = GetRotation(rvec);
+            Vector3 pos = GetPosition(tvec) * moveScale;
+            Quaternion rot = GetRotation(rvec);
             pos.z *= -1;
             rot = q * rot;
             if (mirror)
@@ -146,7 +149,7 @@ namespace kumaS.Tracker.Dlib
         /// <param name="points">68の特徴点。</param>
         private Mat ExtractPoint(DlibDotNet.Point[] points)
         {
-            Point2f[] p = new Point2f[8];
+            var p = new Point2f[8];
             p[0] = points[30].ToVec2f();
             p[1] = points[8].ToVec2f();
             p[2] = points[45].ToVec2f();

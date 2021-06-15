@@ -1,0 +1,17 @@
+{
+    "name": "kumaS.Tracker.VMCProtocol",
+    "references": [
+        "GUID:044d91857fdb8224baaeef6660f799a8",
+        "GUID:560b04d1a97f54a4e82edc0cbbb69285",
+        "GUID:9d3ffe57c060d454aa33a13ff0200c94"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

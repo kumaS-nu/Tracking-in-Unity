@@ -1,17 +1,20 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using Cysharp.Threading.Tasks;
+
 using kumaS.Tracker.Core;
+
 using System;
+using System.Collections.Generic;
+
 using UniRx;
-using Cysharp.Threading.Tasks;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Live2D
 {
     /// <summary>
     /// PMDからLive2Dのパラメーターに変換するストリーム。
     /// </summary>
-    public class PMDToLive2DStream : ScheduleStreamBase<PredictedModelData, PredictedLive2DData>
+    public sealed class PMDToLive2DStream : ScheduleStreamBase<PredictedModelData, PredictedLive2DData>
     {
         public bool isDebugParameter = true;
         public bool mouthToDefault = true;
@@ -26,14 +29,15 @@ namespace kumaS.Tracker.Live2D
 
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private readonly List<string> mouthKey = new List<string> { "A", "I", "U", "E", "O" };
 
-        public override void InitInternal(int thread){
+        protected override void InitInternal(int thread)
+        {
             debugKey = new string[PredictedLive2DData.DefaultParameterList.Length + 1];
             debugKey[0] = SchedulableData<object>.Elapsed_Time;
-            for(var i = 0; i < PredictedLive2DData.DefaultParameterList.Length; i++)
+            for (var i = 0; i < PredictedLive2DData.DefaultParameterList.Length; i++)
             {
                 debugKey[i + 1] = PredictedLive2DData.DefaultParameterList[i];
             }
@@ -44,7 +48,7 @@ namespace kumaS.Tracker.Live2D
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            foreach(var key in PredictedLive2DData.DefaultParameterList)
+            foreach (var key in PredictedLive2DData.DefaultParameterList)
             {
                 data.Data.ToDebugParameter(message, key, key);
             }
@@ -73,19 +77,19 @@ namespace kumaS.Tracker.Live2D
         private void AddParameter(Dictionary<string, float> output, PredictedModelData input)
         {
             var mouth = -1f;
-            foreach(var parameter in input.Parameter)
+            foreach (KeyValuePair<string, float> parameter in input.Parameter)
             {
-                if(parameter.Key == "Blink_L")
+                if (parameter.Key == "Blink_L")
                 {
                     output["ParamEyeLOpen"] = 1 - parameter.Value;
                 }
-                else if(parameter.Key == "Blink_R")
+                else if (parameter.Key == "Blink_R")
                 {
                     output["Blink_R"] = 1 - parameter.Value;
                 }
-                else if(mouthToDefault && mouthKey.Contains(parameter.Key))
+                else if (mouthToDefault && mouthKey.Contains(parameter.Key))
                 {
-                    if(mouth < 0)
+                    if (mouth < 0)
                     {
                         mouth = 0;
                     }
@@ -110,7 +114,7 @@ namespace kumaS.Tracker.Live2D
                 }
             }
 
-            if(mouth >= 0)
+            if (mouth >= 0)
             {
                 output["ParamMouthOpenY"] = mouth;
             }
@@ -123,42 +127,42 @@ namespace kumaS.Tracker.Live2D
         /// <param name="input">入力。</param>
         private void AddPosRot(Dictionary<string, float> output, PredictedModelData input)
         {
-            var rootRot = input.Rotation[PredictedModelData.DefaultRotationList[0]];
-            var leftInverse = Quaternion.Inverse(rootRot) * new Quaternion(0, 1 / Mathf.Sqrt(2), 0, 1 / Mathf.Sqrt(2)) * new Quaternion(0, 0, -1 / Mathf.Sqrt(2), 1 / Mathf.Sqrt(2));
-            var rightInverse = Quaternion.Inverse(rootRot) * new Quaternion(0, -1 / Mathf.Sqrt(2), 0, 1 / Mathf.Sqrt(2)) * new Quaternion(0, 0, 1 / Mathf.Sqrt(2), 1 / Mathf.Sqrt(2));
+            Quaternion rootRot = input.Rotation[PredictedModelData.DefaultRotationList[0]];
+            Quaternion leftInverse = Quaternion.Inverse(rootRot) * new Quaternion(0, 1 / Mathf.Sqrt(2), 0, 1 / Mathf.Sqrt(2)) * new Quaternion(0, 0, -1 / Mathf.Sqrt(2), 1 / Mathf.Sqrt(2));
+            Quaternion rightInverse = Quaternion.Inverse(rootRot) * new Quaternion(0, -1 / Mathf.Sqrt(2), 0, 1 / Mathf.Sqrt(2)) * new Quaternion(0, 0, 1 / Mathf.Sqrt(2), 1 / Mathf.Sqrt(2));
             if (input.Position.ContainsKey(PredictedModelData.DefaultPositionList[0]) && input.Rotation.ContainsKey(PredictedModelData.DefaultRotationList[0]))
             {
                 output["ParamBaseX"] = input.Position[PredictedModelData.DefaultPositionList[0]].x;
                 output["ParamBaseY"] = input.Position[PredictedModelData.DefaultPositionList[0]].y;
-                var rot = rootRot.eulerAngles;
+                Vector3 rot = rootRot.eulerAngles;
                 output["ParamBodyAngleX"] = rot.y;
                 output["ParamBodyAngleY"] = -rot.x;
                 output["ParamBodyAngleZ"] = -rot.z;
             }
 
             {
-                if (input.Rotation.TryGetValue(PredictedModelData.DefaultRotationList[2], out var rot))
+                if (input.Rotation.TryGetValue(PredictedModelData.DefaultRotationList[2], out Quaternion rot))
                 {
                     var x = -(rot * leftInverse).eulerAngles.x;
                     output["ParamArmLA"] = x < 0 ? 0 : x;
                 }
             }
             {
-                if (input.Rotation.TryGetValue(PredictedModelData.DefaultRotationList[4], out var rot))
+                if (input.Rotation.TryGetValue(PredictedModelData.DefaultRotationList[4], out Quaternion rot))
                 {
                     var x = -(rot * leftInverse).eulerAngles.x;
                     output["ParamArmLB"] = x < 0 ? 0 : x;
                 }
             }
             {
-                if (input.Rotation.TryGetValue(PredictedModelData.DefaultRotationList[3], out var rot))
+                if (input.Rotation.TryGetValue(PredictedModelData.DefaultRotationList[3], out Quaternion rot))
                 {
                     var x = -(rot * rightInverse).eulerAngles.x;
                     output["ParamArmRA"] = x < 0 ? 0 : x;
                 }
             }
             {
-                if (input.Rotation.TryGetValue(PredictedModelData.DefaultRotationList[5], out var rot))
+                if (input.Rotation.TryGetValue(PredictedModelData.DefaultRotationList[5], out Quaternion rot))
                 {
                     var x = -(rot * rightInverse).eulerAngles.x;
                     output["ParamArmRB"] = x < 0 ? 0 : x;
@@ -171,7 +175,7 @@ namespace kumaS.Tracker.Live2D
             if (input.Position.ContainsKey(PredictedModelData.DefaultPositionList[1]) && input.Rotation.ContainsKey(PredictedModelData.DefaultRotationList[1]))
             {
                 await UniTask.SwitchToMainThread();
-                var rot = (input.Rotation[PredictedModelData.DefaultRotationList[0]] * Quaternion.Inverse(center.rotation)).eulerAngles;
+                Vector3 rot = (input.Rotation[PredictedModelData.DefaultRotationList[0]] * Quaternion.Inverse(center.rotation)).eulerAngles;
                 output["ParamAngleX"] = rot.y;
                 output["ParamAngleY"] = -rot.x;
                 output["ParamAngleZ"] = -rot.z;

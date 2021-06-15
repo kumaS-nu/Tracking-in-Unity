@@ -1,18 +1,21 @@
-﻿using System.Collections;
+﻿using kumaS.Tracker.Core;
+
 using System.Collections.Generic;
-using UnityEngine;
+
 using UnityEditor;
-using kumaS.Tracker.Core;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Dlib
 {
     [CustomEditor(typeof(DlibBBStream))]
     public class DlibBBStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {
+            property[nameof(DlibBBStream.interval)] = serializedObject.FindProperty(nameof(DlibBBStream.interval));
             property[nameof(DlibBBStream.isDebug)] = serializedObject.FindProperty(nameof(DlibBBStream.isDebug));
             property[nameof(DlibBBStream.isDebugBox)] = serializedObject.FindProperty(nameof(DlibBBStream.isDebugBox));
         }
@@ -98,6 +101,12 @@ namespace kumaS.Tracker.Dlib
                     }
                 }
             }
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            EditorGUILayout.LabelField("Predict setting", EditorStyles.boldLabel);
+
+            serializedObject.ApplyModifiedProperties();
         }
     }
 }

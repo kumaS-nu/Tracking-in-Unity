@@ -1,8 +1,11 @@
-﻿using System;
-using UnityEngine;
-using UniRx;
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
+
+using System;
 using System.Threading;
+
+using UniRx;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core
 {
@@ -31,7 +34,7 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// デバッグ出力をするか。
         /// </summary>
-        public IReadOnlyReactiveProperty<bool> IsDebug { get { return isDebug; } }
+        public IReadOnlyReactiveProperty<bool> IsDebug { get => isDebug; }
 
         /// <summary>
         /// デバッグで出力するデータのキーを取得できるようにする。
@@ -43,7 +46,7 @@ namespace kumaS.Tracker.Core
         /// </summary>
         public async UniTask<object> GetSource(DateTime startTime, CancellationToken token)
         {
-            var source = await SourceInternal(startTime, token);
+            SchedulableData<T> source = await SourceInternal(startTime, token);
             return source;
         }
 
@@ -61,7 +64,7 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// このクラスから取得可能なデータ型。
         /// </summary>
-        public Type SourceType { get { return typeof(SchedulableData<T>); } }
+        public Type SourceType { get => typeof(T); }
 
         /// <summary>
         /// このデータ型のストリームを作成・取得する。

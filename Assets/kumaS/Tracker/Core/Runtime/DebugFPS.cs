@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
-namespace kumaS.Tracker.Core {
+namespace kumaS.Tracker.Core
+{
 
     /// <summary>
     /// FPSをデバッグする際のデータ。

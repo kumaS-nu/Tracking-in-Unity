@@ -1,16 +1,19 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+
+using UnityEditor;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
     [CustomEditor(typeof(OpenCvBBStream))]
     public class OpenCvBBStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private string[] pathTypeLabel;
+        private int[] pathTypeIndex;
 
         private void OnEnable()
         {
@@ -18,6 +21,9 @@ namespace kumaS.Tracker.Core.Editor
             property[nameof(OpenCvBBStream.isDebugBox)] = serializedObject.FindProperty(nameof(OpenCvBBStream.isDebugBox));
             property[nameof(OpenCvBBStream.filePath)] = serializedObject.FindProperty(nameof(OpenCvBBStream.filePath));
             property[nameof(OpenCvBBStream.pathType)] = serializedObject.FindProperty(nameof(OpenCvBBStream.pathType));
+            property[nameof(OpenCvBBStream.interval)] = serializedObject.FindProperty(nameof(OpenCvBBStream.interval));
+            pathTypeLabel = PathUtil.PathHeadLabel.Skip(1).ToArray();
+            pathTypeIndex = pathTypeLabel.Select(value => PathUtil.PathHeadLabel.ToList().IndexOf(value)).ToArray();
         }
 
         public override void OnInspectorGUI()
@@ -79,8 +85,7 @@ namespace kumaS.Tracker.Core.Editor
                 var filePath = property[nameof(OpenCvBBStream.filePath)].stringValue;
                 var pathType = property[nameof(OpenCvBBStream.pathType)].intValue;
                 filePath = PathUtil.Deserialize(filePath, pathType);
-                var label = PathUtil.PathHeadLabel.Skip(1).ToArray();
-                pathType = EditorGUILayout.IntPopup("Path type", pathType, label, label.Select(value => PathUtil.PathHeadLabel.ToList().IndexOf(value)).ToArray());
+                pathType = EditorGUILayout.IntPopup("Path type", pathType, pathTypeLabel, pathTypeIndex);
                 filePath = EditorGUILayout.TextField("File path", filePath);
                 filePath = PathUtil.Serialize(filePath, pathType, false);
 
@@ -90,6 +95,15 @@ namespace kumaS.Tracker.Core.Editor
                 }
                 property[nameof(OpenCvBBStream.filePath)].stringValue = filePath;
                 property[nameof(OpenCvBBStream.pathType)].intValue = pathType;
+            }
+
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            EditorGUILayout.LabelField("Predict setting", EditorStyles.boldLabel);
+            using (new EditorGUI.IndentLevelScope())
+            {
+                property[nameof(OpenCvBBStream.interval)].intValue = EditorGUILayout.IntSlider("Interval", property[nameof(OpenCvBBStream.interval)].intValue, 0, 30);
             }
 
             serializedObject.ApplyModifiedProperties();

@@ -1,8 +1,10 @@
 {
   "dependencies": {
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.hecomi.uosc": "https://github.com/hecomi/uOSC.git?path=/Assets/uOSC/Scripts",
     "com.neuecc.unirx": "https://github.com/neuecc/UniRx.git?path=Assets/Plugins/UniRx/Scripts",
     "com.unity.animation.rigging": "0.2.7-preview",
+    "com.unity.barracuda": "2.0.0-pre.3",
     "com.unity.collab-proxy": "1.2.16",
     "com.unity.ide.rider": "1.1.4",
     "com.unity.ide.vscode": "1.2.3",

@@ -1,16 +1,18 @@
-﻿using System.Collections;
+﻿using kumaS.Tracker.Core;
+
 using System.Collections.Generic;
-using UnityEngine;
+
 using UnityEditor;
-using kumaS.Tracker.Core;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Live2D.Editor
 {
     [CustomEditor(typeof(PMDToLive2DStream))]
     public class PMDToLive2DStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
-        private string[] key = new string[] { "A", "I", "U", "E", "O" };
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly string[] key = new string[] { "A", "I", "U", "E", "O" };
 
         private void OnEnable()
         {
@@ -64,12 +66,12 @@ namespace kumaS.Tracker.Live2D.Editor
             EditorGUILayout.Space();
 
             EditorGUILayout.LabelField("Convert setting", EditorStyles.boldLabel);
-            using(new EditorGUI.IndentLevelScope())
+            using (new EditorGUI.IndentLevelScope())
             {
                 EditorGUILayout.PropertyField(property[nameof(PMDToLive2DStream.mouthToDefault)], new GUIContent("To default mouth parameter"));
                 if (property[nameof(PMDToLive2DStream.mouthToDefault)].boolValue)
                 {
-                    for(var i = 0; i < property[nameof(PMDToLive2DStream.mouthCoeff)].arraySize; i++)
+                    for (var i = 0; i < property[nameof(PMDToLive2DStream.mouthCoeff)].arraySize; i++)
                     {
                         EditorGUILayout.PropertyField(property[nameof(PMDToLive2DStream.mouthCoeff)].GetArrayElementAtIndex(i), new GUIContent(key[i]));
                     }

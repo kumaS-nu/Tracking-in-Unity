@@ -1,23 +1,26 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using Cysharp.Threading.Tasks;
+
 using OpenCvSharp;
-using UniRx;
-using UnityEngine.Video;
-using System.Runtime.InteropServices;
-using Cysharp.Threading.Tasks;
-using UnityEngine.Rendering;
-using Unity.Collections;
-using System.Threading;
+
 using System;
-using System.IO;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+using UniRx;
+
+using Unity.Collections;
+
+using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Video;
 
 namespace kumaS.Tracker.Core
 {
     /// <summary>
     /// 画像を取得する。
     /// </summary>
-    public class MatSource : ScheduleSourceBase<Mat>
+    public sealed class MatSource : ScheduleSourceBase<Mat>
     {
         [SerializeField]
         internal bool useUnity = false;
@@ -41,7 +44,7 @@ namespace kumaS.Tracker.Core
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
         public override string ProcessName { get; set; } = "Mat source";
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
         private VideoCapture CvVideo = default;
         private WebCamTexture unityWebcam;
         private VideoPlayer unityVideo;
@@ -132,11 +135,11 @@ namespace kumaS.Tracker.Core
                     request = AsyncGPUReadback.Request(unityWebcam);
                 }
                 await request;
-                var data = request.GetData<Color32>();
+                NativeArray<Color32> data = request.GetData<Color32>();
 
                 await UniTask.SwitchToThreadPool();
 
-                var ret = Color32ToMat(data.ToArray());
+                Mat ret = Color32ToMat(data.ToArray());
                 var isSuccess = ret.Width * ret.Height == data.Length;
                 var message = isSuccess ? "" : "フレームを取得できませんでした。";
                 return new SchedulableData<Mat>(ret, Id, startTime, isSuccess, message);
@@ -146,10 +149,10 @@ namespace kumaS.Tracker.Core
         private Mat Color32ToMat(Color32[] data)
         {
             var mat = new Mat(height, width, MatType.CV_8UC3);
-            byte[] byteData = new byte[width * height * 3];
-            for (int h = 0; h < height; h++)
+            var byteData = new byte[width * height * 3];
+            for (var h = 0; h < height; h++)
             {
-                for (int w = 0; w < width; w++)
+                for (var w = 0; w < width; w++)
                 {
                     var colorIndex = data.Length - (h * width + width - w);
                     var byteIndex = 3 * (h * width + w);

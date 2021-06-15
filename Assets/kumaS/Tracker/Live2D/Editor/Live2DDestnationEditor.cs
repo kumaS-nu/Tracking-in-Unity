@@ -1,15 +1,17 @@
-﻿using System.Collections;
+﻿using kumaS.Tracker.Core;
+
 using System.Collections.Generic;
-using UnityEngine;
+
 using UnityEditor;
-using kumaS.Tracker.Core;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Live2D.Editor
 {
     [CustomEditor(typeof(Live2DDestnation))]
     public class Live2DDestnationEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {

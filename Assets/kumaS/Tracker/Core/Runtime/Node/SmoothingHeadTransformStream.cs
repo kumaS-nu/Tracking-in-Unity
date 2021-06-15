@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-
-using UniRx;
+﻿using System.Collections.Generic;
 
 using UnityEngine;
 
@@ -11,7 +7,7 @@ namespace kumaS.Tracker.Core
     /// <summary>
     /// 頭の位置・回転を滑らかにするストリーム。
     /// </summary>
-    public class SmoothingHeadTransformStream : SmoothingStreamBase<HeadTransform>
+    public sealed class SmoothingHeadTransformStream : SmoothingStreamBase<HeadTransform>
     {
         [SerializeField]
         internal float moveSpeedLimit = 0.05f;
@@ -29,10 +25,10 @@ namespace kumaS.Tracker.Core
         internal bool isDebugHead = true;
 
         public override string ProcessName { get; set; } = "Smoothing head transform";
-        public override string[] DebugKey { get; } = new string[] { 
-            SchedulableData<object>.Elapsed_Time, 
+        public override string[] DebugKey { get; } = new string[] {
+            SchedulableData<object>.Elapsed_Time,
             nameof(Head_Pos_X), nameof(Head_Pos_Y), nameof(Head_Pos_Z),
-            nameof(Head_Rot_X), nameof(Head_Rot_Y), nameof(Head_Rot_Z) 
+            nameof(Head_Rot_X), nameof(Head_Rot_Y), nameof(Head_Rot_Z)
         };
 
         private readonly string Head_Pos_X = nameof(Head_Pos_X);
@@ -57,21 +53,21 @@ namespace kumaS.Tracker.Core
         {
             Vector3 position = Vector3.zero;
             Vector3 logLotation = Vector3.zero;
-            Quaternion average = Quaternion.identity;
-            if(lastOutput != default)
+            Quaternion average = datas[0].Rotation;
+            if (lastOutput != default)
             {
                 average = lastOutput.Rotation;
             }
             var inverse = Quaternion.Inverse(average);
 
-            foreach (var data in datas)
+            foreach (HeadTransform data in datas)
             {
                 position += data.Position;
-                logLotation += (data.Rotation * inverse).ToLogQuaternion();
+                logLotation += (inverse * data.Rotation).ToLogQuaternion();
             }
             position /= datas.Length;
             logLotation /= datas.Length;
-            return new HeadTransform(position, logLotation.ToQuaternion() * average);
+            return new HeadTransform(position, average * logLotation.ToQuaternion());
         }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<HeadTransform> data)
@@ -91,19 +87,19 @@ namespace kumaS.Tracker.Core
 
         protected override bool ValidateData(HeadTransform input)
         {
-            if(input.Position.sqrMagnitude > moveRangeInternal)
+            if (input.Position.sqrMagnitude > moveRangeInternal)
             {
                 return false;
             }
-            if(input.Position.sqrMagnitude > moveSpeedLimitInternal)
+            if (input.Position.sqrMagnitude > moveSpeedLimitInternal)
             {
                 return false;
             }
-            if(Quaternion.Angle(input.Rotation, Quaternion.identity) > rotateRange)
+            if (Quaternion.Angle(input.Rotation, Quaternion.identity) > rotateRange)
             {
                 return false;
             }
-            if(Quaternion.Angle(input.Rotation, lastOutput.Rotation) > rotateSpeedLimitInternal)
+            if (Quaternion.Angle(input.Rotation, lastOutput.Rotation) > rotateSpeedLimitInternal)
             {
                 return false;
             }

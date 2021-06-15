@@ -1,7 +1,6 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using OpenCvSharp;
+
 using UnityEngine;
-using OpenCvSharp;
 
 namespace kumaS.Tracker.Dlib
 {

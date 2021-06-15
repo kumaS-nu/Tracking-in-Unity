@@ -1,14 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
+
 using UnityEditor;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
     [CustomEditor(typeof(SmoothingHeadTransformStream))]
     public class SmoothingHeadTransformStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {
@@ -50,7 +51,7 @@ namespace kumaS.Tracker.Core.Editor
             EditorGUILayout.Space();
 
             EditorGUILayout.LabelField("Smoothing setting", EditorStyles.boldLabel);
-            using(new EditorGUI.IndentLevelScope())
+            using (new EditorGUI.IndentLevelScope())
             {
                 property[nameof(SmoothingHeadTransformStream.bufferSize)].intValue = EditorGUILayout.IntSlider("Buffer size", property[nameof(SmoothingHeadTransformStream.bufferSize)].intValue, 1, 32);
                 property[nameof(SmoothingHeadTransformStream.moveSpeedLimit)].floatValue = EditorGUILayout.Slider(new GUIContent("Move speed limit", "per frame"), property[nameof(SmoothingHeadTransformStream.moveSpeedLimit)].floatValue, 0, 1);

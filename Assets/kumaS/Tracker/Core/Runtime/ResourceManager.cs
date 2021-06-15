@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace kumaS.Tracker.Core
 {
@@ -11,7 +9,7 @@ namespace kumaS.Tracker.Core
     /// </summary>
     public static class ResourceManager
     {
-        private static Dictionary<Type, List<int>> releaseId = new Dictionary<Type, List<int>>();
+        private static readonly Dictionary<Type, List<int>> releaseId = new Dictionary<Type, List<int>>();
 
         /// <summary>
         /// 解放するノードを設定。
@@ -21,7 +19,7 @@ namespace kumaS.Tracker.Core
         {
             releaseId.Clear();
 
-            foreach(var node in allNodes)
+            foreach (StreamNode node in allNodes)
             {
                 foreach (Type type in GetUseType(node))
                 {
@@ -44,12 +42,12 @@ namespace kumaS.Tracker.Core
         /// <returns>使う型。</returns>
         private static Type[] GetUseType(StreamNode node)
         {
-            if(node.Schedulable is IScheduleStream)
+            if (node.Schedulable is IScheduleStream)
             {
                 return ((IScheduleStream)node.Schedulable).UseType;
             }
 
-            if(node.Schedulable is IScheduleDestination)
+            if (node.Schedulable is IScheduleDestination)
             {
                 return ((IScheduleDestination)node.Schedulable).UseType;
             }

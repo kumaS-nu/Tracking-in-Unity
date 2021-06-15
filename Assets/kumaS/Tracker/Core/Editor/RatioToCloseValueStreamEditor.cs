@@ -1,14 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
+
 using UnityEditor;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
     [CustomEditor(typeof(RatioToCloseValueStream))]
     public class RatioToCloseValueStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {
@@ -59,7 +60,7 @@ namespace kumaS.Tracker.Core.Editor
                     EditorGUILayout.LabelField("Max", GUILayout.Width(50));
                     max = EditorGUILayout.FloatField(max);
                 }
-                if(min < max && min >= 0 && max <= 1)
+                if (min < max && min >= 0 && max <= 1)
                 {
                     property[nameof(RatioToCloseValueStream.ratioMin)].floatValue = min;
                     property[nameof(RatioToCloseValueStream.ratioMax)].floatValue = max;

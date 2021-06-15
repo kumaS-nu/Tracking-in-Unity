@@ -1,11 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using Live2D.Cubism.Core;
+﻿using System.Collections.Generic;
 
 namespace kumaS.Tracker.Live2D
 {
-    public class PredictedLive2DData
+    public sealed class PredictedLive2DData
     {
         /// <summary>
         /// Live2Dのパラメーター。

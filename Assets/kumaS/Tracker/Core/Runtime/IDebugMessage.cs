@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 
 namespace kumaS.Tracker.Core
-{ 
+{
     /// <summary>
     /// デバッグメッセージを表すインターフェース。
     /// </summary>

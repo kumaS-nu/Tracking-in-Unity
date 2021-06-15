@@ -1,9 +1,8 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System;
 using System.Collections.Concurrent;
-using UnityEngine;
+using System.Collections.Generic;
+
 using UniRx;
-using System;
 
 namespace kumaS.Tracker.Core
 {

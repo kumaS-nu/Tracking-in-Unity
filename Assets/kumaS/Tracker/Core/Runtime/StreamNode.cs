@@ -42,7 +42,7 @@ namespace kumaS.Tracker.Core
         /// <returns>成功したか。</returns>
         internal bool TryGetSourceStream(out Subject<object> stream)
         {
-            if(sourceStream != null && Schedulable is IScheduleSource)
+            if (sourceStream != null && Schedulable is IScheduleSource)
             {
                 stream = sourceStream;
                 return true;
@@ -108,7 +108,7 @@ namespace kumaS.Tracker.Core
         /// <returns>成功したか。</returns>
         internal bool TryGetErrorStream(out IObservable<object> stream)
         {
-            if(errorStream != null && Schedulable is IScheduleDestination)
+            if (errorStream != null && Schedulable is IScheduleDestination)
             {
                 stream = errorStream;
                 return true;

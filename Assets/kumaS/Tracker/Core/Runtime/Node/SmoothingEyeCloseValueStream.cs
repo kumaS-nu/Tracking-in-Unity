@@ -1,5 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+
 using UnityEngine;
 
 namespace kumaS.Tracker.Core
@@ -7,7 +7,7 @@ namespace kumaS.Tracker.Core
     /// <summary>
     /// 目の閉じ具合を滑らかにするストリーム。
     /// </summary>
-    public class SmoothingEyeCloseValueStream : SmoothingStreamBase<EyeCloseValue>
+    public sealed class SmoothingEyeCloseValueStream : SmoothingStreamBase<EyeCloseValue>
     {
 
         [SerializeField]
@@ -23,7 +23,7 @@ namespace kumaS.Tracker.Core
         {
             var leftSum = 0f;
             var rightSum = 0f;
-            foreach(var d in datas)
+            foreach (EyeCloseValue d in datas)
             {
                 leftSum += d.Left;
                 rightSum += d.Right;
@@ -35,7 +35,7 @@ namespace kumaS.Tracker.Core
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if(data.IsSuccess && isDebugValue)
+            if (data.IsSuccess && isDebugValue)
             {
                 message[Left_Close_Value] = data.Data.Left.ToString();
                 message[Right_Close_Value] = data.Data.Right.ToString();
@@ -45,12 +45,12 @@ namespace kumaS.Tracker.Core
 
         protected override bool ValidateData(EyeCloseValue input)
         {
-            if(lastOutput == default)
+            if (lastOutput == default)
             {
                 return true;
             }
 
-            if(input.Left < 0 || input.Left > 1 || input.Right < 0 || input.Right > 1)
+            if (input.Left < 0 || input.Left > 1 || input.Right < 0 || input.Right > 1)
             {
                 return false;
             }

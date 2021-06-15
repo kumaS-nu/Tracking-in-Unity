@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 
 using UniRx;
@@ -11,7 +10,7 @@ namespace kumaS.Tracker.Core
     /// <summary>
     /// 目の閉じ具合をPMDに変換するストリーム。
     /// </summary>
-    public class EyeCloseValueToPMDStream : ScheduleStreamBase<EyeCloseValue, PredictedModelData>
+    public sealed class EyeCloseValueToPMDStream : ScheduleStreamBase<EyeCloseValue, PredictedModelData>
     {
         [SerializeField]
         internal bool isDebugValue = true;
@@ -24,7 +23,7 @@ namespace kumaS.Tracker.Core
         private readonly string Blink_L = nameof(Blink_L);
         private readonly string Blink_R = nameof(Blink_R);
 
-        public override void InitInternal(int thread){ }
+        protected override void InitInternal(int thread) { }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<PredictedModelData> data)
         {
@@ -45,10 +44,12 @@ namespace kumaS.Tracker.Core
                 return new SchedulableData<PredictedModelData>(input, default);
             }
 
-            var paramater = new Dictionary<string, float>();
-            paramater[Blink_L] = input.Data.Left;
-            paramater[Blink_R] = input.Data.Right;
-            var ret = new PredictedModelData(new Dictionary<string, Vector3>(), new Dictionary<string, Quaternion>(), paramater);
+            var paramater = new Dictionary<string, float>
+            {
+                [Blink_L] = input.Data.Left,
+                [Blink_R] = input.Data.Right
+            };
+            var ret = new PredictedModelData(parameter: paramater);
             return new SchedulableData<PredictedModelData>(input, ret);
         }
     }

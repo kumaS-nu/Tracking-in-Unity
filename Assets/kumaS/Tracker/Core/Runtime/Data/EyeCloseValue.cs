@@ -1,8 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
-namespace kumaS.Tracker.Core
+﻿namespace kumaS.Tracker.Core
 {
     /// <summary>
     /// 目の閉じ具合のデータ．

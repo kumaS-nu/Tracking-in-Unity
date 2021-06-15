@@ -212,6 +212,7 @@ MonoBehaviour:
   filePath: D:\Other\haarcascade_frontalface_default.xml
   pathType: 1
   isDebugBox: 1
+  interval: 0
 --- !u!114 &360894270
 MonoBehaviour:
   m_ObjectHideFlags: 0

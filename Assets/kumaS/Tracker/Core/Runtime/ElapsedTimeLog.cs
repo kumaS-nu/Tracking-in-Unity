@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 
 namespace kumaS.Tracker.Core
 {
@@ -19,7 +16,7 @@ namespace kumaS.Tracker.Core
         /// 開始時間。
         /// </summary>
         public DateTime StartTime { get; }
-        
+
         /// <summary>
         /// 経過時間。
         /// </summary>

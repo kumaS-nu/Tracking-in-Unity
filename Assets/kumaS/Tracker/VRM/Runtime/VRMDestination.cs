@@ -1,15 +1,21 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using kumaS.Tracker.Core;
+﻿using kumaS.Tracker.Core;
+
 using System;
-using VRM;
-using UniRx;
+using System.Collections.Generic;
 using System.Linq;
+
+using UniRx;
+
+using UnityEngine;
+
+using VRM;
 
 namespace kumaS.Tracker.VRM
 {
-    public class VRMDestination : ScheduleDestinationBase<PredictedModelData>
+    /// <summary>
+    /// VRMに適応する。
+    /// </summary>
+    public sealed class VRMDestination : ScheduleDestinationBase<PredictedVRMData>
     {
         [SerializeField]
         internal List<Transform> transforms = new List<Transform>();
@@ -21,21 +27,21 @@ namespace kumaS.Tracker.VRM
         public override Type[] UseType { get; } = new Type[0];
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
-        private Dictionary<string, BlendShapeKey> convertTable = new Dictionary<string, BlendShapeKey>();
-        private Dictionary<string, Transform> innerTransforms = new Dictionary<string, Transform>();
+        private readonly Dictionary<string, BlendShapeKey> convertTable = new Dictionary<string, BlendShapeKey>();
+        private readonly Dictionary<string, Transform> innerTransforms = new Dictionary<string, Transform>();
 
         private void Awake()
         {
             if (proxy != null)
             {
-                foreach (var clip in proxy.GetValues())
+                foreach (KeyValuePair<BlendShapeKey, float> clip in proxy.GetValues())
                 {
                     convertTable[clip.Key.Name] = clip.Key;
                 }
             }
-            foreach(var t in transforms)
+            foreach (Transform t in transforms)
             {
                 innerTransforms[t.name] = t;
             }
@@ -43,21 +49,21 @@ namespace kumaS.Tracker.VRM
             isAvailable.Value = true;
         }
 
-        protected override void ProcessInternal(SchedulableData<PredictedModelData> input)
+        protected override void ProcessInternal(SchedulableData<PredictedVRMData> input)
         {
             if (input.IsSuccess)
             {
-                foreach(var pos in input.Data.Position)
+                foreach (KeyValuePair<string, Vector3> pos in input.Data.Position)
                 {
-                    if(innerTransforms.TryGetValue(pos.Key, out var t))
+                    if (innerTransforms.TryGetValue(pos.Key, out Transform t))
                     {
                         t.position = pos.Value;
                     }
                 }
 
-                foreach (var rot in input.Data.Rotation)
+                foreach (KeyValuePair<string, Quaternion> rot in input.Data.Rotation)
                 {
-                    if (innerTransforms.TryGetValue(rot.Key, out var t))
+                    if (innerTransforms.TryGetValue(rot.Key, out Transform t))
                     {
                         t.rotation = rot.Value;
                     }
@@ -65,7 +71,7 @@ namespace kumaS.Tracker.VRM
 
                 if (proxy != null)
                 {
-                    var values = input.Data.Parameter.Where(para => convertTable.ContainsKey(para.Key)).Select(para => new KeyValuePair<BlendShapeKey, float>(convertTable[para.Key], para.Value));
+                    IEnumerable<KeyValuePair<BlendShapeKey, float>> values = input.Data.Parameter.Where(para => convertTable.ContainsKey(para.Key)).Select(para => new KeyValuePair<BlendShapeKey, float>(convertTable[para.Key], para.Value));
                     proxy.SetValues(values);
                 }
             }

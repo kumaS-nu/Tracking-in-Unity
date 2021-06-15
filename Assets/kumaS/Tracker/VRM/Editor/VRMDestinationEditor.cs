@@ -1,15 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
+
 using UnityEditor;
-using kumaS.Tracker.VRM;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.VRM.Editor
 {
     [CustomEditor(typeof(VRMDestination))]
     public class VRMDestinationEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {
@@ -47,8 +47,11 @@ namespace kumaS.Tracker.VRM.Editor
             EditorGUILayout.Space();
 
             EditorGUILayout.LabelField("VRM setting", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(property[nameof(VRMDestination.proxy)], new GUIContent("Blend shape proxy"));
-            EditorGUILayout.PropertyField(property[nameof(VRMDestination.transforms)], new GUIContent("Target transforms"));
+            using (new EditorGUI.IndentLevelScope())
+            {
+                EditorGUILayout.PropertyField(property[nameof(VRMDestination.proxy)], new GUIContent("Blend shape proxy"));
+                EditorGUILayout.PropertyField(property[nameof(VRMDestination.transforms)], new GUIContent("Target transforms"));
+            }
 
             serializedObject.ApplyModifiedProperties();
         }

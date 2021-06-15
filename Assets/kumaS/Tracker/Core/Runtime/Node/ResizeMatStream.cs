@@ -1,17 +1,18 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using OpenCvSharp;
+﻿using OpenCvSharp;
+
 using System;
+using System.Collections.Generic;
+
 using UniRx;
-using Cysharp.Threading.Tasks;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core
 {
     /// <summary>
     /// 画像をリサイズする。
     /// </summary>
-    public class ResizeMatStream : ScheduleStreamBase<Mat, Mat>
+    public sealed class ResizeMatStream : ScheduleStreamBase<Mat, Mat>
     {
         [SerializeField]
         internal double ratio = 1;
@@ -26,7 +27,7 @@ namespace kumaS.Tracker.Core
 
         private readonly string Resized_Pointer = nameof(Resized_Pointer);
 
-        public override void InitInternal(int thread){ }
+        protected override void InitInternal(int thread) { }
 
         protected override SchedulableData<Mat> ProcessInternal(SchedulableData<Mat> input)
         {

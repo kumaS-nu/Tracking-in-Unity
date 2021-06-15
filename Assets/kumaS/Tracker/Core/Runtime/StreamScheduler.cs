@@ -1,15 +1,16 @@
-﻿using System;
-using System.Collections;
+﻿using Cysharp.Threading.Tasks;
+
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading;
+
+using UniRx;
 
 using UnityEngine;
-using UniRx;
-using Cysharp.Threading.Tasks;
-using System.IO;
-using System.Text;
-using System.Collections.Concurrent;
-using System.Threading;
 
 namespace kumaS.Tracker.Core
 {
@@ -121,21 +122,21 @@ namespace kumaS.Tracker.Core
 
         private List<StreamNode> allNodes = default;
 
-        private Subject<DebugFPS> fpsSource = new Subject<DebugFPS>();
+        private readonly Subject<DebugFPS> fpsSource = new Subject<DebugFPS>();
 
         private string[] fpsDebugKey;
 
-        private List<IReadOnlyReactiveProperty<bool>> nodeIsDebug = new List<IReadOnlyReactiveProperty<bool>>();
+        private readonly List<IReadOnlyReactiveProperty<bool>> nodeIsDebug = new List<IReadOnlyReactiveProperty<bool>>();
 
-        private List<IObservable<IDebugMessage>> debugStreams = new List<IObservable<IDebugMessage>>();
+        private readonly List<IObservable<IDebugMessage>> debugStreams = new List<IObservable<IDebugMessage>>();
 
         private IDisposable debugStream = default;
 
-        private Dictionary<int, StreamWriter> streamWriters = new Dictionary<int, StreamWriter>();
+        private readonly Dictionary<int, StreamWriter> streamWriters = new Dictionary<int, StreamWriter>();
 
-        private List<StreamSourceInfomation> sourceInfomations = new List<StreamSourceInfomation>();
+        private readonly List<StreamSourceInfomation> sourceInfomations = new List<StreamSourceInfomation>();
 
-        private Dictionary<int, int> sourceInfomationIndex = new Dictionary<int, int>();
+        private readonly Dictionary<int, int> sourceInfomationIndex = new Dictionary<int, int>();
 
         private void Reset()
         {
@@ -156,37 +157,37 @@ namespace kumaS.Tracker.Core
             var timeStreams = new List<IObservable<ElapsedTimeLog>>();
             var errorStreams = new List<IObservable<object>>();
             var startIds = new List<int>();
-            foreach(var node in allNodes)
+            foreach (StreamNode node in allNodes)
             {
-                if(node.TryGetSourceStream(out var sStream))
+                if (node.TryGetSourceStream(out Subject<object> sStream))
                 {
                     sourceInfomations.Add(new StreamSourceInfomation(allNodes.IndexOf(node), sStream, (IScheduleSource)node.Schedulable, fps[sourceInfomations.Count], DateTime.MinValue, thread));
                 }
 
-                if(node.TryGetMainStream(out var mStream))
+                if (node.TryGetMainStream(out IObservable<object> mStream))
                 {
                     var schedulable = (IDebuggable)node.Schedulable;
 
                     var id = allNodes.IndexOf(node);
                     var processName = schedulable.ProcessName;
                     IDebugMessage AddNodeInfo(IDebugMessage data)
-                    { 
+                    {
                         data.Id = id;
                         data.ProcessName = processName;
-                        return data; 
+                        return data;
                     };
 
                     nodeIsDebug.Add(schedulable.IsDebug);
                     debugStreams.Add(mStream.Select(schedulable.DebugLog).Select(AddNodeInfo));
                 }
 
-                if(node.TryGetTimeStream(out var tStream))
+                if (node.TryGetTimeStream(out IObservable<ElapsedTimeLog> tStream))
                 {
                     timeStreams.Add(tStream);
                     startIds.AddRange(node.StartId);
                 }
 
-                if(node.TryGetErrorStream(out var eStream))
+                if (node.TryGetErrorStream(out IObservable<object> eStream))
                 {
                     errorStreams.Add(eStream);
                 }
@@ -194,20 +195,20 @@ namespace kumaS.Tracker.Core
                 ((ISchedule)node.Schedulable).Id = allNodes.IndexOf(node);
             }
 
-            foreach(var index in startIds)
+            foreach (var index in startIds)
             {
                 ++sourceInfomations.First(info => info.id == index).destinationCount;
             }
             nodeIsDebug.Add(isDebugFPS);
             debugStreams.Add(fpsSource);
-            
+
             nodeIsDebug.Merge().Merge(isDebug, isWriteFile).Subscribe(_ => SetDebugStream()).AddTo(this);
 
             errorStreams.Merge().Cast<object, ISchedulableMetadata>().Where(data => isDebug.Value && !data.IsSuccess)
                 .ObserveOnMainThread().Subscribe(ShowError).AddTo(this);
 
             var fpsKey = new List<string>();
-            foreach(var sourceInfomation in sourceInfomations)
+            foreach (StreamSourceInfomation sourceInfomation in sourceInfomations)
             {
                 sourceInfomationIndex.Add(sourceInfomation.id, sourceInfomations.IndexOf(sourceInfomation));
                 fpsKey.Add(sourceInfomation.id + sourceInfomation.scheduleSource.ProcessName);
@@ -233,7 +234,7 @@ namespace kumaS.Tracker.Core
             {
                 debugStream.Dispose();
             }
-            foreach (var sw in streamWriters)
+            foreach (KeyValuePair<int, StreamWriter> sw in streamWriters)
             {
                 sw.Value.Flush();
                 sw.Value.Close();
@@ -255,15 +256,16 @@ namespace kumaS.Tracker.Core
                         Directory.CreateDirectory(Path.Combine(Application.dataPath, "Debug data", time));
                     }
 
-                    foreach (var node in allNodes)
+                    foreach (StreamNode node in allNodes)
                     {
-                        if (node.TryGetMainStream(out _)) {
+                        if (node.TryGetMainStream(out _))
+                        {
                             var debaggable = (IDebuggable)node.Schedulable;
                             if (debaggable.IsDebug.Value)
                             {
                                 var sw = new StreamWriter(Path.Combine(Application.dataPath, "Debug data", time, allNodes.IndexOf(node) + debaggable.ProcessName + ".csv"), false, Encoding.UTF8);
                                 streamWriters.Add(allNodes.IndexOf(node), sw);
-                                StringBuilder sb = new StringBuilder();
+                                var sb = new StringBuilder();
                                 sb.Append("startTime,");
                                 foreach (var header in debaggable.DebugKey)
                                 {
@@ -274,7 +276,7 @@ namespace kumaS.Tracker.Core
                                 sw.WriteLine(sb.ToString());
                             }
                         }
-                        
+
                     }
 
                     if (isDebugFPS.Value)
@@ -284,7 +286,7 @@ namespace kumaS.Tracker.Core
                     }
                 }
                 var currentDebugStreams = new List<IObservable<IDebugMessage>>();
-                for(var i = 0; i < debugStreams.Count; i++)
+                for (var i = 0; i < debugStreams.Count; i++)
                 {
                     if (nodeIsDebug[i].Value)
                     {
@@ -294,14 +296,14 @@ namespace kumaS.Tracker.Core
                 debugStream = currentDebugStreams.Merge().ObserveOnMainThread().Subscribe(OutputDebug).AddTo(this);
             }
         }
-        
+
         /// <summary>
         /// デバッグ出力する。
         /// </summary>
         /// <param name="message">内容。</param>
         private void OutputDebug(IDebugMessage message)
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             string[] dKey;
             if (message.Id == -1)
             {
@@ -313,7 +315,7 @@ namespace kumaS.Tracker.Core
             }
             foreach (var key in dKey)
             {
-                if (message.Data.TryGetValue(key, out string value))
+                if (message.Data.TryGetValue(key, out var value))
                 {
                     sb.Append(value);
                 }
@@ -333,7 +335,7 @@ namespace kumaS.Tracker.Core
             }
             else
             {
-                StringBuilder sb2 = new StringBuilder();
+                var sb2 = new StringBuilder();
                 string[] debugKey;
                 if (message.Id == -1)
                 {
@@ -345,8 +347,8 @@ namespace kumaS.Tracker.Core
                     sb2.AppendFormat("{0},{1},{2}\n", message.ProcessName, message.Id, message.StartTime);
                     debugKey = ((IDebuggable)allNodes[message.Id].Schedulable).DebugKey;
                 }
-                
-                foreach(var key in debugKey)
+
+                foreach (var key in debugKey)
                 {
                     sb2.Append(key);
                     sb2.Append(",");
@@ -369,7 +371,7 @@ namespace kumaS.Tracker.Core
         private void InitializeEachNode()
         {
             var failed = false;
-            foreach(var node in allNodes)
+            foreach (StreamNode node in allNodes)
             {
                 try
                 {
@@ -379,7 +381,7 @@ namespace kumaS.Tracker.Core
                         stream.Init(thread);
                     }
                 }
-                catch(Exception e)
+                catch (Exception e)
                 {
                     failed = true;
                     Debug.LogError(((ISchedule)node.Schedulable).ProcessName + e.ToString());
@@ -398,13 +400,13 @@ namespace kumaS.Tracker.Core
         /// <param name="time">計測された時間。</param>
         private void SetInterval(ElapsedTimeLog time)
         {
-            var sourceInfomation = sourceInfomations[sourceInfomationIndex[time.SourceId]];
+            StreamSourceInfomation sourceInfomation = sourceInfomations[sourceInfomationIndex[time.SourceId]];
             sourceInfomation.elapsedTimes.TryAdd(time.StartTime, new ConcurrentBag<TimeSpan>());
-            var elapsedTimes = sourceInfomation.elapsedTimes[time.StartTime];
+            ConcurrentBag<TimeSpan> elapsedTimes = sourceInfomation.elapsedTimes[time.StartTime];
             elapsedTimes.Add(time.ElapsedTime);
-            if(elapsedTimes.Count == sourceInfomation.destinationCount)
+            if (elapsedTimes.Count == sourceInfomation.destinationCount)
             {
-                var buffer = sourceInfomation.elapsedTimeBuffer;
+                ConcurrentQueue<TimeSpan> buffer = sourceInfomation.elapsedTimeBuffer;
                 buffer.Enqueue(new TimeSpan(elapsedTimes.Sum(t => t.Ticks) / sourceInfomation.destinationCount));
                 buffer.TryDequeue(out _);
                 sourceInfomation.elapsedTimes.TryRemove(time.StartTime, out _);
@@ -426,10 +428,10 @@ namespace kumaS.Tracker.Core
             while (true)
             {
                 token.ThrowIfCancellationRequested();
-                var now = DateTime.Now;
-                foreach(var sourceInfomation in sourceInfomations)
+                DateTime now = DateTime.Now;
+                foreach (StreamSourceInfomation sourceInfomation in sourceInfomations)
                 {
-                    var updates = sourceInfomation.updates;
+                    LinkedList<DateTime> updates = sourceInfomation.updates;
                     if (now - updates.Last.Value >= sourceInfomation.interval)
                     {
                         lock (updates)
@@ -466,7 +468,7 @@ namespace kumaS.Tracker.Core
         private void LogFPS()
         {
             var data = new Dictionary<string, string>();
-            foreach(var infomation in sourceInfomations)
+            foreach (StreamSourceInfomation infomation in sourceInfomations)
             {
                 data.Add(infomation.id + infomation.scheduleSource.ProcessName, (1 / (infomation.updates.Last.Value - infomation.updates.First.Value).TotalSeconds * infomation.updates.Count).ToString());
             }

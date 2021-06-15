@@ -1,14 +1,11 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-using UniRx;
+﻿using UniRx;
 
 namespace kumaS.Tracker.Core
 {
     /// <summary>
     /// デバッグ可能にするためのインターフェース。内部用。
     /// </summary>
-    internal interface IDebuggable: ISchedule
+    internal interface IDebuggable : ISchedule
     {
         /// <summary>
         /// デバッグ出力をするか。

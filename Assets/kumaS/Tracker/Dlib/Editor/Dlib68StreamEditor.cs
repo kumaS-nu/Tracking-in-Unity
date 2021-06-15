@@ -1,17 +1,21 @@
-﻿using System.Collections;
+﻿using kumaS.Tracker.Core;
+
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
-using kumaS.Tracker.Core;
-using System.Linq;
 using System.IO;
+using System.Linq;
+
+using UnityEditor;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Dlib.Editor
 {
     [CustomEditor(typeof(Dlib68Stream))]
     public class Dlib68StreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private string[] pathTypeLabel;
+        private int[] pathTypeIndex;
 
         private void OnEnable()
         {
@@ -19,6 +23,8 @@ namespace kumaS.Tracker.Dlib.Editor
             property[nameof(Dlib68Stream.pathType)] = serializedObject.FindProperty(nameof(Dlib68Stream.pathType));
             property[nameof(Dlib68Stream.isDebug)] = serializedObject.FindProperty(nameof(Dlib68Stream.isDebug));
             property[nameof(Dlib68Stream.isDebugPoint)] = serializedObject.FindProperty(nameof(Dlib68Stream.isDebugPoint));
+            pathTypeLabel = PathUtil.PathHeadLabel.Skip(1).ToArray();
+            pathTypeIndex = pathTypeLabel.Select(value => PathUtil.PathHeadLabel.ToList().IndexOf(value)).ToArray();
         }
 
         public override void OnInspectorGUI()
@@ -119,8 +125,7 @@ namespace kumaS.Tracker.Dlib.Editor
                 var filePath = property[nameof(Dlib68Stream.filePath)].stringValue;
                 var pathType = property[nameof(Dlib68Stream.pathType)].intValue;
                 filePath = PathUtil.Deserialize(filePath, pathType);
-                var label = PathUtil.PathHeadLabel.Skip(1).ToArray();
-                pathType = EditorGUILayout.IntPopup("Path type", pathType, label, label.Select(value => PathUtil.PathHeadLabel.ToList().IndexOf(value)).ToArray());
+                pathType = EditorGUILayout.IntPopup("Path type", pathType, pathTypeLabel, pathTypeIndex);
                 filePath = EditorGUILayout.TextField("File path", filePath);
                 filePath = PathUtil.Serialize(filePath, pathType, false);
 
@@ -131,6 +136,11 @@ namespace kumaS.Tracker.Dlib.Editor
                 property[nameof(Dlib68Stream.filePath)].stringValue = filePath;
                 property[nameof(Dlib68Stream.pathType)].intValue = pathType;
             }
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
+            EditorGUILayout.LabelField("Predict setting", EditorStyles.boldLabel);
+
             serializedObject.ApplyModifiedProperties();
         }
     }

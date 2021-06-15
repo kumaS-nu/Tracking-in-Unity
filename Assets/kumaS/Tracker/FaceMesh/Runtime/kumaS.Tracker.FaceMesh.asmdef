@@ -2,8 +2,10 @@
     "name": "kumaS.Tracker.FaceMesh",
     "references": [
         "GUID:044d91857fdb8224baaeef6660f799a8",
-        "GUID:1d60c9d5619f41a47a102e5290dc43dc",
-        "GUID:2bfe4d119d8480c429e013cc9a7059f5"
+        "GUID:560b04d1a97f54a4e82edc0cbbb69285",
+        "GUID:f51ebe6a0ceec4240a699833d6309b23",
+        "GUID:5c2b5ba89f9e74e418232e154bc5cc7a",
+        "GUID:2665a8d13d1b3f18800f46e256720795"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

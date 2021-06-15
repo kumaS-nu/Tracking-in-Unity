@@ -1,15 +1,15 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
+
 using UnityEditor;
-using kumaS.Tracker.Core;
+
+using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
     [CustomEditor(typeof(EyeRotationToPMDStream))]
     public class EyeRotationToPMDStreamEditor : UnityEditor.Editor
     {
-        private Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
+        private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
 
         private void OnEnable()
         {
@@ -40,7 +40,7 @@ namespace kumaS.Tracker.Core.Editor
                     {
                         EditorGUILayout.PropertyField(property[nameof(EyeRotationToPMDStream.isDebugRotation)], new GUIContent("Rotation"));
                     }
-                
+
                 }
             }
             EditorGUILayout.Space();

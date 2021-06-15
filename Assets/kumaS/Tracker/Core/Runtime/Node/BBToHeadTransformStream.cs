@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-
-using Cysharp.Threading.Tasks;
 
 using UniRx;
 
@@ -13,7 +10,7 @@ namespace kumaS.Tracker.Core
     /// <summary>
     /// バウンダリーボックスから頭の位置・回転に変換。
     /// </summary>
-    public class BBToHeadTransformStream : ScheduleStreamBase<BoundaryBox, HeadTransform>
+    public sealed class BBToHeadTransformStream : ScheduleStreamBase<BoundaryBox, HeadTransform>
     {
         [SerializeField]
         internal float moveScale = 0.1f;
@@ -44,7 +41,7 @@ namespace kumaS.Tracker.Core
         };
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private readonly string Head_Pos_X = nameof(Head_Pos_X);
         private readonly string Head_Pos_Y = nameof(Head_Pos_Y);
@@ -55,7 +52,8 @@ namespace kumaS.Tracker.Core
 
         private readonly string Head = nameof(Head);
 
-        public override void InitInternal(int thread) {
+        protected override void InitInternal(int thread)
+        {
             mirror = sourceIsMirror != wantMirror;
             isAvailable.Value = true;
         }
@@ -79,8 +77,9 @@ namespace kumaS.Tracker.Core
                 return new SchedulableData<HeadTransform>(input, default);
             }
             var nomarizer = input.Data.ImageSize.x > input.Data.ImageSize.y ? input.Data.ImageSize.x : input.Data.ImageSize.y;
-            var bb2D = (input.Data.Box.center - input.Data.ImageSize / 2) / nomarizer;
-            float z = 0;
+            Vector2 bb2D = (input.Data.Box.center - input.Data.ImageSize / 2) / nomarizer;
+            var z = 0.0f;
+            var angle = input.Data.Angle;
             if (isEnableDepth)
             {
                 z = (input.Data.Box.width + input.Data.Box.height) / 2 / nomarizer - depthCenter;
@@ -88,8 +87,9 @@ namespace kumaS.Tracker.Core
             if (!mirror)
             {
                 bb2D.x *= -1;
+                angle *= -1;
             }
-            var ret = new HeadTransform(new Vector3(bb2D.x, bb2D.y, z) * moveScale, Quaternion.identity);
+            var ret = new HeadTransform(new Vector3(bb2D.x, bb2D.y, z) * moveScale, Quaternion.Euler(0, 0, angle));
             return new SchedulableData<HeadTransform>(input, ret);
         }
     }
