@@ -7,6 +7,7 @@ using OpenCvSharp;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 using UniRx;
 
@@ -68,13 +69,14 @@ namespace kumaS.Tracker.FaceMesh
         private byte[][] data;
         private float[][] affine;
         private BoundaryBox box = default;
-        private readonly object boxLock = default;
+        private readonly object boxLock = new object();
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<FaceMeshLandmarks> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
@@ -96,7 +98,8 @@ namespace kumaS.Tracker.FaceMesh
             return new DebugMessage(data, message);
         }
 
-        protected override void InitInternal(int thread)
+        /// <inheritdoc/>
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             normalizers = new Normalizer[thread];
             affineTransform = new AffineTransform[thread];
@@ -120,15 +123,6 @@ namespace kumaS.Tracker.FaceMesh
             }
             MakeDebugKey();
             isAvailable.Value = true;
-        }
-
-        private void OnDestroy()
-        {
-            foreach (Normalizer normalizer in normalizers)
-            {
-                normalizer.Input.Dispose();
-                normalizer.Output.Dispose();
-            }
         }
 
         private void MakeDebugKey()
@@ -162,11 +156,12 @@ namespace kumaS.Tracker.FaceMesh
             debugKey = key.ToArray();
         }
 
+        /// <inheritdoc/>
         protected override SchedulableData<FaceMeshLandmarks> ProcessInternal(SchedulableData<BoundaryBox> input)
         {
             try
             {
-                if (!input.IsSuccess)
+                if (!input.IsSuccess || input.IsSignal)
                 {
                     return new SchedulableData<FaceMeshLandmarks>(input, default);
                 }
@@ -184,6 +179,10 @@ namespace kumaS.Tracker.FaceMesh
                     bb = input.Data;
                     lock (boxLock)
                     {
+                        if (box != null && box.OriginalImage != null && box.OriginalImage.IsEnabledDispose)
+                        {
+                            box.OriginalImage.Dispose();
+                        }
                         box = bb;
                     }
                 }
@@ -220,15 +219,12 @@ namespace kumaS.Tracker.FaceMesh
                 }
                 else
                 {
-                    return new SchedulableData<FaceMeshLandmarks>(input, default, false, "スレッドを確保できませんでした。");
+                    return new SchedulableData<FaceMeshLandmarks>(input, default, false, true, errorMessage: "スレッドを確保できませんでした。");
                 }
             }
             finally
             {
-                if (ResourceManager.isRelease(typeof(Mat), Id))
-                {
-                    input.Data.OriginalImage.Dispose();
-                }
+                ResourceManager.DisposeIfRelease(input.Data.OriginalImage, Id);
             }
         }
 
@@ -244,7 +240,7 @@ namespace kumaS.Tracker.FaceMesh
 
             if (flags[0] < minScore)
             {
-                return new SchedulableData<FaceMeshLandmarks>(input, default, false, "顔が見つかりませんでした");
+                return new SchedulableData<FaceMeshLandmarks>(input, default, false, true, errorMessage: "顔が見つかりませんでした");
             }
 
             affineTransform[thread].Input.CopyFrom(coords.ToReadOnlyArray());
@@ -288,6 +284,33 @@ namespace kumaS.Tracker.FaceMesh
             var angle = Mathf.Atan2(landmarks[12].x - landmarks[167].x, landmarks[12].y - landmarks[167].x);
             var ret = new FaceMeshLandmarks(input.Data.OriginalImage, landmarks, new UnityEngine.Rect(landmarks[0].x - halflen, landmarks[0].y - halflen, width, height), angle);
             return new SchedulableData<FaceMeshLandmarks>(input, ret);
+        }
+
+        /// <inheritdoc/>
+        public override void Dispose()
+        {
+            foreach (Normalizer normalizer in normalizers)
+            {
+                normalizer.Input.Dispose();
+                normalizer.Output.Dispose();
+            }
+
+            foreach (AffineTransform transformer in affineTransform)
+            {
+                transformer.Input.Dispose();
+                transformer.Affine.Dispose();
+                transformer.Output.Dispose();
+            }
+
+            foreach (IWorker worker in workers)
+            {
+                worker.Dispose();
+            }
+
+            if (box != null && box.OriginalImage != null && box.OriginalImage.IsEnabledDispose)
+            {
+                box.OriginalImage.Dispose();
+            }
         }
     }
 }

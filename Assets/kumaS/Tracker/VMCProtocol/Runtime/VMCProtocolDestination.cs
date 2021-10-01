@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 using UniRx;
 
@@ -74,30 +75,6 @@ namespace kumaS.Tracker.VMCProtocol
         private readonly List<float> blendShapeValue = new List<float>();
         private Vector3 eyePos = new Vector3();
 
-        private void Awake()
-        {
-            while (hmdPos.Count < hmdLabel.Count)
-            {
-                hmdPos.Add(Vector3.zero);
-                hmdRot.Add(Quaternion.identity);
-            }
-            while (trackerPos.Count < trackerLabel.Count)
-            {
-                trackerPos.Add(Vector3.zero);
-                trackerRot.Add(Quaternion.identity);
-            }
-            while (blendShapeValue.Count < blendShapeLabel.Count)
-            {
-                blendShapeValue.Add(0);
-            }
-            udp.StartClient(adress, 39540);
-            isAvailable.Value = true;
-        }
-
-        private void OnDisable()
-        {
-            udp.Stop();
-        }
 
         protected override void ProcessInternal(SchedulableData<PredictedModelData> input)
         {
@@ -202,6 +179,31 @@ namespace kumaS.Tracker.VMCProtocol
                     udp.Send(Util.GetBuffer(stream), (int)stream.Position);
                 }
             }
+        }
+
+        public override void Dispose()
+        {
+            udp.Stop();
+        }
+
+        public override void Init(int thread, CancellationToken token)
+        {
+            while (hmdPos.Count < hmdLabel.Count)
+            {
+                hmdPos.Add(Vector3.zero);
+                hmdRot.Add(Quaternion.identity);
+            }
+            while (trackerPos.Count < trackerLabel.Count)
+            {
+                trackerPos.Add(Vector3.zero);
+                trackerRot.Add(Quaternion.identity);
+            }
+            while (blendShapeValue.Count < blendShapeLabel.Count)
+            {
+                blendShapeValue.Add(0);
+            }
+            udp.StartClient(adress, 39540);
+            isAvailable.Value = true;
         }
     }
 }

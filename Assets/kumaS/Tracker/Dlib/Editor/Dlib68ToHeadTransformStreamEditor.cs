@@ -30,8 +30,12 @@ namespace kumaS.Tracker.Dlib.Editor
             property[nameof(Dlib68ToHeadTransformStream.moveScale)] = serializedObject.FindProperty(nameof(Dlib68ToHeadTransformStream.moveScale));
             property[nameof(Dlib68ToHeadTransformStream.sourceIsMirror)] = serializedObject.FindProperty(nameof(Dlib68ToHeadTransformStream.sourceIsMirror));
             property[nameof(Dlib68ToHeadTransformStream.wantMirror)] = serializedObject.FindProperty(nameof(Dlib68ToHeadTransformStream.wantMirror));
+            property[nameof(Dlib68ToHeadTransformStream.centerPos)] = serializedObject.FindProperty(nameof(Dlib68ToHeadTransformStream.centerPos));
+            property[nameof(Dlib68ToHeadTransformStream.centerRot)] = serializedObject.FindProperty(nameof(Dlib68ToHeadTransformStream.centerRot));
+            property[nameof(Dlib68ToHeadTransformStream.centerlizeKey)] = serializedObject.FindProperty(nameof(Dlib68ToHeadTransformStream.centerlizeKey));
             property[nameof(Dlib68ToHeadTransformStream.isDebug)] = serializedObject.FindProperty(nameof(Dlib68ToHeadTransformStream.isDebug));
             property[nameof(Dlib68ToHeadTransformStream.isDebugHead)] = serializedObject.FindProperty(nameof(Dlib68ToHeadTransformStream.isDebugHead));
+            
         }
 
         public override void OnInspectorGUI()
@@ -87,7 +91,12 @@ namespace kumaS.Tracker.Dlib.Editor
             EditorGUILayout.LabelField("Convert setting", EditorStyles.boldLabel);
             using (new EditorGUI.IndentLevelScope())
             {
-                property[nameof(Dlib68ToHeadTransformStream.moveScale)].floatValue = EditorGUILayout.Slider("Move scale", property[nameof(Dlib68ToHeadTransformStream.moveScale)].floatValue, 0, 1);
+                EditorGUILayout.PropertyField(property[nameof(Dlib68ToHeadTransformStream.moveScale)], new GUIContent("Move scale"));
+                EditorGUILayout.PropertyField(property[nameof(Dlib68ToHeadTransformStream.centerlizeKey)], new GUIContent("Centerlize key"));
+                EditorGUILayout.PropertyField(property[nameof(Dlib68ToHeadTransformStream.centerPos)], new GUIContent("Center position"));
+                var rot = Quaternion.Inverse(property[nameof(Dlib68ToHeadTransformStream.centerRot)].quaternionValue).eulerAngles;
+                rot = EditorGUILayout.Vector3Field("Center rotation", rot);
+                property[nameof(Dlib68ToHeadTransformStream.centerRot)].quaternionValue = Quaternion.Inverse(Quaternion.Euler(rot));
             }
             EditorGUILayout.Space();
             EditorGUILayout.Space();

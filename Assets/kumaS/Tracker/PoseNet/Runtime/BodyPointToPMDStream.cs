@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -42,7 +43,7 @@ namespace kumaS.Tracker.PoseNet
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 if (isDebugPosition)
                 {
@@ -63,7 +64,7 @@ namespace kumaS.Tracker.PoseNet
             return new DebugMessage(data, message);
         }
 
-        protected override void InitInternal(int thread)
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             var dkey = new List<string>();
             var px = new List<string>();
@@ -109,7 +110,7 @@ namespace kumaS.Tracker.PoseNet
 
         protected override SchedulableData<PredictedModelData> ProcessInternal(SchedulableData<BodyPoints> input)
         {
-            if (!input.IsSuccess)
+            if (!input.IsSuccess || input.IsSignal)
             {
                 return new SchedulableData<PredictedModelData>(input, default);
             }
@@ -128,5 +129,7 @@ namespace kumaS.Tracker.PoseNet
             var ret = new PredictedModelData(pos, rot);
             return new SchedulableData<PredictedModelData>(input, ret);
         }
+
+        public override void Dispose(){ }
     }
 }

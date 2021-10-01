@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -26,14 +27,14 @@ namespace kumaS.Tracker.Core
         public override string ProcessName { get; set; } = "Eye ratio to close value";
         public override Type[] UseType { get; } = new Type[0];
         public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Left_Close_Value), nameof(Right_Close_Value) };
-        public override IReadOnlyReactiveProperty<bool> IsAvailable { get => IsAvailable; }
+        public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
         private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
         private readonly string Left_Close_Value = nameof(Left_Close_Value);
         private readonly string Right_Close_Value = nameof(Right_Close_Value);
 
-        protected override void InitInternal(int thread)
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             coeff = 1 / (ratioMax - ratioMin);
             isAvailable.Value = true;
@@ -43,7 +44,7 @@ namespace kumaS.Tracker.Core
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess && isDebugValue)
+            if (data.IsSuccess && isDebugValue && !data.IsSignal)
             {
                 message[Left_Close_Value] = data.Data.Left.ToString();
                 message[Right_Close_Value] = data.Data.Right.ToString();
@@ -53,7 +54,7 @@ namespace kumaS.Tracker.Core
 
         protected override SchedulableData<EyeCloseValue> ProcessInternal(SchedulableData<EyeRatio> input)
         {
-            if (!input.IsSuccess)
+            if (!input.IsSuccess || input.IsSignal)
             {
                 return new SchedulableData<EyeCloseValue>(input, default);
             }
@@ -82,5 +83,7 @@ namespace kumaS.Tracker.Core
                 return value;
             }
         }
+
+        public override void Dispose(){ }
     }
 }

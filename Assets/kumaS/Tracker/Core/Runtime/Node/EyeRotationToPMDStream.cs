@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -40,13 +41,13 @@ namespace kumaS.Tracker.Core
         private readonly string R_Eye_Y = nameof(R_Eye_Y);
         private readonly string R_Eye_Z = nameof(R_Eye_Z);
 
-        protected override void InitInternal(int thread) { }
+        protected override void InitInternal(int thread, CancellationToken token) { }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<PredictedModelData> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess && isDebugRotation)
+            if (data.IsSuccess && isDebugRotation && !data.IsSignal)
             {
                 data.Data.ToDebugRotation(message, L_Eye, L_Eye_X, L_Eye_Y, L_Eye_Z);
                 data.Data.ToDebugRotation(message, R_Eye, R_Eye_X, R_Eye_Y, R_Eye_Z);
@@ -56,7 +57,7 @@ namespace kumaS.Tracker.Core
 
         protected override SchedulableData<PredictedModelData> ProcessInternal(SchedulableData<EyeRotation> input)
         {
-            if (!input.IsSuccess)
+            if (!input.IsSuccess || input.IsSignal)
             {
                 return new SchedulableData<PredictedModelData>(input, default);
             }
@@ -75,5 +76,7 @@ namespace kumaS.Tracker.Core
             var ret = new PredictedModelData(rotation: rot);
             return new SchedulableData<PredictedModelData>(input, ret);
         }
+
+        public override void Dispose(){ }
     }
 }

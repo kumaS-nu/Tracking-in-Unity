@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 using UniRx;
 
@@ -13,7 +14,7 @@ using VRM;
 namespace kumaS.Tracker.VRM
 {
     /// <summary>
-    /// VRMに適応する。
+    /// VRMに適用する。
     /// </summary>
     public sealed class VRMDestination : ScheduleDestinationBase<PredictedVRMData>
     {
@@ -31,23 +32,6 @@ namespace kumaS.Tracker.VRM
 
         private readonly Dictionary<string, BlendShapeKey> convertTable = new Dictionary<string, BlendShapeKey>();
         private readonly Dictionary<string, Transform> innerTransforms = new Dictionary<string, Transform>();
-
-        private void Awake()
-        {
-            if (proxy != null)
-            {
-                foreach (KeyValuePair<BlendShapeKey, float> clip in proxy.GetValues())
-                {
-                    convertTable[clip.Key.Name] = clip.Key;
-                }
-            }
-            foreach (Transform t in transforms)
-            {
-                innerTransforms[t.name] = t;
-            }
-
-            isAvailable.Value = true;
-        }
 
         protected override void ProcessInternal(SchedulableData<PredictedVRMData> input)
         {
@@ -75,6 +59,25 @@ namespace kumaS.Tracker.VRM
                     proxy.SetValues(values);
                 }
             }
+        }
+
+        public override void Dispose(){ }
+
+        public override void Init(int thread, CancellationToken token)
+        {
+            if (proxy != null)
+            {
+                foreach (KeyValuePair<BlendShapeKey, float> clip in proxy.GetValues())
+                {
+                    convertTable[clip.Key.Name] = clip.Key;
+                }
+            }
+            foreach (Transform t in transforms)
+            {
+                innerTransforms[t.name] = t;
+            }
+
+            isAvailable.Value = true;
         }
     }
 }

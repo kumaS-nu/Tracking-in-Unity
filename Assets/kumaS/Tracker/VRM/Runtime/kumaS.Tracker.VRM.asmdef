@@ -1,5 +1,6 @@
 {
     "name": "kumaS.Tracker.VRM",
+    "rootNamespace": "kumaS.Tracker.VRM",
     "references": [
         "GUID:044d91857fdb8224baaeef6660f799a8",
         "GUID:05dd262a0c0a2f841b8252c8c3815582",

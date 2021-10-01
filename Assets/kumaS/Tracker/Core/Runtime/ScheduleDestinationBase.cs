@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 using UniRx;
 
@@ -37,6 +38,17 @@ namespace kumaS.Tracker.Core
         /// 利用するデータ型。
         /// </summary>
         public Type DestinationType { get => typeof(T); }
+
+        /// <summary>
+        /// 派生クラスではここにデスティネーション破棄時の処理を書く。
+        /// </summary>
+        public abstract void Dispose();
+
+        /// <summary>
+        /// 派生クラスではここに初期化の処理を書く。
+        /// </summary>
+        /// <param name="thread">用意するスレッド数。</param>
+        public abstract void Init(int thread, CancellationToken token);
 
         /// <summary>
         /// この段階での処理。メインスレッドが保証。

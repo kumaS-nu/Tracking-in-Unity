@@ -4,6 +4,7 @@ using OpenCvSharp;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -55,32 +56,35 @@ namespace kumaS.Tracker.FaceMesh
         private readonly string R_Eye_Y = nameof(R_Eye_Y);
         private readonly string R_Eye_Z = nameof(R_Eye_Z);
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<EyeRotation> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess && isDebugRotation)
+            if (data.IsSuccess && isDebugRotation && !data.IsSignal)
             {
                 data.Data.ToDebugRoattion(message, L_Eye_X, L_Eye_Y, L_Eye_Z, R_Eye_X, R_Eye_Y, R_Eye_Z);
             }
             return new DebugMessage(data, message);
         }
 
-        protected override void InitInternal(int thread)
+        /// <inheritdoc/>
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             mirror = sourceIsMirror != wantMirror;
             isAvailable.Value = true;
         }
 
+        /// <inheritdoc/>
         protected override SchedulableData<EyeRotation> ProcessInternal(SchedulableData<FaceMeshLandmarks> input)
         {
+            if (!input.IsSuccess || input.IsSignal)
+            {
+                return new SchedulableData<EyeRotation>(input, default);
+            }
+
             try
             {
-                if (!input.IsSuccess)
-                {
-                    return new SchedulableData<EyeRotation>(input, default);
-                }
-
                 Vector2 predictedLeftCenter = PredictCenter(input.Data.OriginalImage, GetRect(GetLeft(input.Data.Landmarks)));
                 Vector2 predictedRightCenter = PredictCenter(input.Data.OriginalImage, GetRect(GetRight(input.Data.Landmarks)));
                 Vector2 leftPoint = GetNormalizedPoint(input.Data.Landmarks[462], input.Data.Landmarks[358], predictedLeftCenter);
@@ -105,10 +109,7 @@ namespace kumaS.Tracker.FaceMesh
             }
             finally
             {
-                if (ResourceManager.isRelease(typeof(Mat), Id))
-                {
-                    input.Data.OriginalImage.Dispose();
-                }
+                ResourceManager.DisposeIfRelease(input.Data.OriginalImage, Id);
             }
         }
 
@@ -245,5 +246,8 @@ namespace kumaS.Tracker.FaceMesh
             ret = ret * c.magnitude / xAxies.magnitude;
             return ret;
         }
+
+        /// <inheritdoc/>
+        public override void Dispose(){ }
     }
 }

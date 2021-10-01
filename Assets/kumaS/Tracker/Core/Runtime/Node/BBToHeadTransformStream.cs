@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -52,7 +53,7 @@ namespace kumaS.Tracker.Core
 
         private readonly string Head = nameof(Head);
 
-        protected override void InitInternal(int thread)
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             mirror = sourceIsMirror != wantMirror;
             isAvailable.Value = true;
@@ -62,7 +63,7 @@ namespace kumaS.Tracker.Core
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess && isDebugHead)
+            if (data.IsSuccess && isDebugHead && !data.IsSignal)
             {
                 data.Data.ToDebugPosition(message, Head_Pos_X, Head_Pos_Y, Head_Pos_Z);
                 data.Data.ToDebugRotation(message, Head_Rot_X, Head_Rot_Y, Head_Rot_Z);
@@ -72,7 +73,7 @@ namespace kumaS.Tracker.Core
 
         protected override SchedulableData<HeadTransform> ProcessInternal(SchedulableData<BoundaryBox> input)
         {
-            if (!input.IsSuccess)
+            if (!input.IsSuccess || input.IsSignal)
             {
                 return new SchedulableData<HeadTransform>(input, default);
             }
@@ -92,5 +93,7 @@ namespace kumaS.Tracker.Core
             var ret = new HeadTransform(new Vector3(bb2D.x, bb2D.y, z) * moveScale, Quaternion.Euler(0, 0, angle));
             return new SchedulableData<HeadTransform>(input, ret);
         }
+
+        public override void Dispose(){ }
     }
 }

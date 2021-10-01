@@ -4,6 +4,7 @@ using OpenCvSharp;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -36,7 +37,7 @@ namespace kumaS.Tracker.BlazeFace
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
@@ -52,11 +53,24 @@ namespace kumaS.Tracker.BlazeFace
             return new DebugMessage(data, message);
         }
 
-        protected override void InitInternal(int thread) { }
+        protected override void InitInternal(int thread, CancellationToken token) { }
 
         protected override SchedulableData<BoundaryBox> ProcessInternal(SchedulableData<BlazeFaceLandmarks> input)
         {
-            return new SchedulableData<BoundaryBox>(input, input.Data);
+            if (!input.IsSuccess || input.IsSignal)
+            {
+                return new SchedulableData<BoundaryBox>(input, default);
+            }
+            try
+            {
+                return new SchedulableData<BoundaryBox>(input, input.Data);
+            }
+            finally
+            {
+                ResourceManager.DisposeIfRelease(input.Data.OriginalImage, Id);
+            }
         }
+
+        public override void Dispose(){ }
     }
 }

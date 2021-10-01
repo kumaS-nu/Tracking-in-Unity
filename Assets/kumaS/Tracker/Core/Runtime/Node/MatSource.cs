@@ -29,7 +29,19 @@ namespace kumaS.Tracker.Core
         internal bool isFile = false;
 
         [SerializeField]
+        internal bool sendSameImage = false;
+
+        [SerializeField]
         internal int cameraIndex = 0;
+
+        [SerializeField]
+        internal int request_fps = 30;
+
+        [SerializeField]
+        internal int request_width = 1280;
+
+        [SerializeField]
+        internal int request_height = 720;
 
         [SerializeField]
         internal string filePath = default;
@@ -40,56 +52,17 @@ namespace kumaS.Tracker.Core
         [SerializeField]
         internal bool isDebugSize = true;
 
-        public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Data_Pointer), nameof(Width), nameof(height) };
+        public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Data_Pointer), nameof(Width), nameof(Height) };
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
         public override string ProcessName { get; set; } = "Mat source";
 
         private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
-        private VideoCapture CvVideo = default;
-        private WebCamTexture unityWebcam;
-        private VideoPlayer unityVideo;
-        private int width;
-        private int height;
+        private IVideo video;
+        private CancellationToken token;
 
         private readonly string Data_Pointer = nameof(Data_Pointer);
         private readonly string Width = nameof(Width);
         private readonly string Height = nameof(Height);
-
-        private void Awake()
-        {
-            if (useUnity)
-            {
-                if (isFile)
-                {
-                    unityVideo = GetComponent<VideoPlayer>();
-                    if (unityVideo == null)
-                    {
-                        unityVideo = gameObject.AddComponent<VideoPlayer>();
-                    }
-                    unityVideo.url = filePath;
-                    unityVideo.renderMode = VideoRenderMode.APIOnly;
-                    Observable.EveryUpdate().First(_ => unityVideo.isPrepared).Subscribe((_ => { unityVideo.Play(); width = (int)unityVideo.width; height = (int)unityVideo.height; isAvailable.Value = true; }));
-                }
-                else
-                {
-                    unityWebcam = new WebCamTexture(WebCamTexture.devices[cameraIndex].name);
-                    unityWebcam.Play();
-                    Observable.EveryUpdate().First(_ => unityWebcam.GetPixel(0, 0).r > 0.0001f).Subscribe((_ => { width = unityWebcam.width; height = unityWebcam.height; isAvailable.Value = true; }));
-                }
-            }
-            else
-            {
-                if (isFile)
-                {
-                    CvVideo = new VideoCapture(filePath);
-                }
-                else
-                {
-                    CvVideo = new VideoCapture(cameraIndex);
-                }
-                Observable.EveryUpdate().First(_ => CvVideo.IsOpened()).Subscribe(_ => isAvailable.Value = true);
-            }
-        }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<Mat> data)
         {
@@ -110,76 +83,55 @@ namespace kumaS.Tracker.Core
             return new DebugMessage(data, msg);
         }
 
-        protected override async UniTask<SchedulableData<Mat>> SourceInternal(DateTime startTime, CancellationToken token)
+        protected override async UniTask<SchedulableData<Mat>> SourceInternal(DateTime startTime)
         {
-            if (!useUnity)
+            try
             {
-                token.ThrowIfCancellationRequested();
-                var ret = new Mat();
-                var isSuccess = CvVideo.Read(ret);
-                var message = isSuccess ? "" : "フレームを取得できませんでした。";
-                return new SchedulableData<Mat>(ret, Id, startTime, isSuccess, message);
+                var mat = await video.Read();
+                if (mat == null)
+                {
+                    return new SchedulableData<Mat>(default, Id, startTime, isSignal: true);
+                }
+                return new SchedulableData<Mat>(mat, Id, startTime);
             }
-            else
+            catch (IndexOutOfRangeException e)
             {
-                await UniTask.SwitchToMainThread();
+                return new SchedulableData<Mat>(default, Id, startTime, false, true, e.Message);
+            }
+        }
 
-                token.ThrowIfCancellationRequested();
-                AsyncGPUReadbackRequest request = default;
+        public override void Init(int thread, CancellationToken token)
+        {
+            if (useUnity)
+            {
                 if (isFile)
                 {
-                    request = AsyncGPUReadback.Request(unityVideo.texture);
+                    video = new WrapedVideoPlayer(gameObject, filePath, sendSameImage);         
                 }
                 else
                 {
-                    request = AsyncGPUReadback.Request(unityWebcam);
+                    video = new WrapedWebCamTexture(cameraIndex, request_fps, request_height, request_width, sendSameImage);
                 }
-                await request;
-                NativeArray<Color32> data = request.GetData<Color32>();
-
-                await UniTask.SwitchToThreadPool();
-
-                Mat ret = Color32ToMat(data.ToArray());
-                var isSuccess = ret.Width * ret.Height == data.Length;
-                var message = isSuccess ? "" : "フレームを取得できませんでした。";
-                return new SchedulableData<Mat>(ret, Id, startTime, isSuccess, message);
             }
-        }
-
-        private Mat Color32ToMat(Color32[] data)
-        {
-            var mat = new Mat(height, width, MatType.CV_8UC3);
-            var byteData = new byte[width * height * 3];
-            for (var h = 0; h < height; h++)
+            else
             {
-                for (var w = 0; w < width; w++)
+                if (isFile)
                 {
-                    var colorIndex = data.Length - (h * width + width - w);
-                    var byteIndex = 3 * (h * width + w);
-                    byteData[byteIndex] = data[colorIndex].b;
-                    byteData[byteIndex + 1] = data[colorIndex].g;
-                    byteData[byteIndex + 2] = data[colorIndex].r;
+                    video = new WrapedVideoCapture(filePath, sendSameImage, token);
+                }
+                else
+                {
+                    video = new WrapedVideoCapture(cameraIndex, request_fps, request_height, request_width, sendSameImage, token);
                 }
             }
-            Marshal.Copy(byteData, 0, mat.Data, width * height * 3);
-            return mat;
+            Observable.EveryUpdate().First(_ => video.IsPrepared).Subscribe(_ => { isAvailable.Value = true; });
         }
 
-        private void OnDestroy()
+        public override void Dispose()
         {
-            if (unityVideo != null)
+            if(video != null)
             {
-                unityVideo.Stop();
-            }
-
-            if (unityWebcam != null)
-            {
-                unityWebcam.Stop();
-            }
-
-            if (CvVideo.IsEnabledDispose)
-            {
-                CvVideo.Dispose();
+                video.Dispose();
             }
         }
     }

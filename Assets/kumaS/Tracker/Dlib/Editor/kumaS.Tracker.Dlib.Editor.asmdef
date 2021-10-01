@@ -1,5 +1,6 @@
 {
     "name": "kumaS.Tracker.Dlib.Editor",
+    "rootNamespace": "kumaS.Tracker.Dlib.Editor",
     "references": [
         "GUID:044d91857fdb8224baaeef6660f799a8",
         "GUID:560b04d1a97f54a4e82edc0cbbb69285",

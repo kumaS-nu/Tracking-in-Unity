@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 
 using UnityEngine;
 
@@ -56,36 +57,21 @@ namespace kumaS.Tracker.Core
         private readonly string R_Eye_Y = nameof(R_Eye_Y);
         private readonly string R_Eye_Z = nameof(R_Eye_Z);
 
-        private void Awake()
+        /// <inheritdoc/>
+        protected override EyeRotation Average(EyeRotation[] datas, EyeRotation removed, bool isRemoved)
         {
-            rotateSpeedLimitInternal = bufferSize * rotateSpeedLimit;
+            Quaternion rotationL = datas[0].Left;
+            Quaternion rotationR = datas[0].Right;
+
+            for (var i = 1; i < datas.Length; i++)
+            {
+                rotationL = QuaternionInterpolation.Zslerp(rotationL, datas[i].Left, 1.0f / (i + 1));
+                rotationR = QuaternionInterpolation.Zslerp(rotationR, datas[i].Right, 1.0f / (i + 1));
+            }
+            return new EyeRotation(rotationL, rotationR);
         }
 
-        protected override EyeRotation Average(EyeRotation[] datas)
-        {
-            Vector3 logLotationL = Vector3.zero;
-            Vector3 logLotationR = Vector3.zero;
-            Quaternion averageL = datas[0].Left;
-            Quaternion averageR = datas[0].Right;
-
-            if (lastOutput != default)
-            {
-                averageL = lastOutput.Left;
-                averageR = lastOutput.Right;
-            }
-            var inverseL = Quaternion.Inverse(averageL);
-            var inverseR = Quaternion.Inverse(averageR);
-
-            foreach (EyeRotation data in datas)
-            {
-                logLotationL += (inverseL * data.Left).ToLogQuaternion();
-                logLotationR += (inverseR * data.Right).ToLogQuaternion();
-            }
-            logLotationL /= datas.Length;
-            logLotationR /= datas.Length;
-            return new EyeRotation(averageL * logLotationL.ToQuaternion(), averageR * logLotationR.ToQuaternion());
-        }
-
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<EyeRotation> data)
         {
             var message = new Dictionary<string, string>();
@@ -97,6 +83,7 @@ namespace kumaS.Tracker.Core
             return new DebugMessage(data, message);
         }
 
+        /// <inheritdoc/>
         protected override bool ValidateData(EyeRotation input)
         {
             Vector3 left = input.Left.eulerAngles;
@@ -129,6 +116,15 @@ namespace kumaS.Tracker.Core
             }
 
             return true;
+        }
+
+        /// <inheritdoc/>
+        public override void Dispose(){ }
+
+        /// <inheritdoc/>
+        protected override void InitInternal2(int thread, CancellationToken token)
+        {
+            rotateSpeedLimitInternal = bufferSize * rotateSpeedLimit;
         }
     }
 }

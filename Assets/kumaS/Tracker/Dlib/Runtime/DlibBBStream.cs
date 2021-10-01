@@ -1,4 +1,6 @@
-﻿using DlibDotNet;
+﻿using Cysharp.Threading.Tasks;
+
+using DlibDotNet;
 
 using kumaS.Tracker.Core;
 
@@ -6,6 +8,7 @@ using OpenCvSharp;
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 using UniRx;
@@ -43,21 +46,28 @@ namespace kumaS.Tracker.Dlib
         private readonly string Height = nameof(Height);
         private readonly string Angle = nameof(Angle);
 
-        protected override void InitInternal(int thread)
+        protected override async void InitInternal(int thread, CancellationToken token)
         {
             detectors = new FrontalFaceDetector[thread];
+            List<UniTask> tasks = new List<UniTask>();
             for (var i = 0; i < thread; i++)
             {
-                detectors[i] = DlibDotNet.Dlib.GetFrontalFaceDetector();
+                tasks.Add(LoadAsync(i));
             }
+            await UniTask.WhenAll(tasks);
             isAvailable.Value = true;
+        }
+        private async UniTask LoadAsync(int thread)
+        {
+            await UniTask.SwitchToThreadPool();
+            detectors[thread] = DlibDotNet.Dlib.GetFrontalFaceDetector();
         }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<BoundaryBox> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
@@ -75,13 +85,13 @@ namespace kumaS.Tracker.Dlib
 
         protected override SchedulableData<BoundaryBox> ProcessInternal(SchedulableData<Mat> input)
         {
+            if (!input.IsSuccess || input.IsSignal)
+            {
+                return new SchedulableData<BoundaryBox>(input, default);
+            }
+
             try
             {
-                if (!input.IsSuccess)
-                {
-                    return new SchedulableData<BoundaryBox>(input, default);
-                }
-
                 if (skipped < interval)
                 {
                     Interlocked.Increment(ref skipped);
@@ -93,12 +103,16 @@ namespace kumaS.Tracker.Dlib
                     Interlocked.Exchange(ref skipped, 0);
                     try
                     {
-                        using (Array2D<BgrPixel> image = DlibDotNet.Dlib.LoadImageData<BgrPixel>(input.Data.Data, (uint)input.Data.Height, (uint)input.Data.Width, (uint)(input.Data.Width * input.Data.ElemSize())))
+                        using (Array2D<BgrPixel> image = DlibDotNet.Dlib.LoadImageData<BgrPixel>(input.Data.Data, (uint)input.Data.Height, (uint)input.Data.Width, (uint)input.Data.Width))
                         {
                             Rectangle[] bb = detectors[thread].Operator(image);
                             if (bb.Length == 0)
                             {
-                                return new SchedulableData<BoundaryBox>(input, default, false, "顔が検出されませんでした。");
+                                if (input.Data.IsEnabledDispose)
+                                {
+                                    input.Data.Dispose();
+                                }
+                                return new SchedulableData<BoundaryBox>(input, default, false, true, errorMessage: "顔が検出されませんでした。");
                             }
                             var ret = new BoundaryBox(input.Data, new UnityEngine.Rect(bb[0].Left, bb[0].Top, bb[0].Width, bb[0].Height));
                             return new SchedulableData<BoundaryBox>(input, ret);
@@ -111,17 +125,28 @@ namespace kumaS.Tracker.Dlib
                 }
                 else
                 {
-                    return new SchedulableData<BoundaryBox>(input, default, false, "スレッドを確保できませんでした。");
+                    if (input.Data.IsEnabledDispose)
+                    {
+                        input.Data.Dispose();
+                    }
+                    return new SchedulableData<BoundaryBox>(input, default, false, true, errorMessage: "スレッドを確保できませんでした。");
                 }
             }
             finally
             {
-                if (ResourceManager.isRelease(typeof(Mat), Id))
+                ResourceManager.DisposeIfRelease(input.Data, Id);
+            }
+        }
+
+        public override void Dispose()
+        {
+            foreach (FrontalFaceDetector d in detectors)
+            {
+                if (d.IsEnableDispose)
                 {
-                    input.Data.Dispose();
+                    d.Dispose();
                 }
             }
-
         }
     }
 }

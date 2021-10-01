@@ -15,7 +15,7 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// 取得可能なデータ。
         /// </summary>
-        UniTask<object> GetSource(DateTime startTime, CancellationToken token);
+        UniTask<object> GetSource(DateTime startTime);
 
         /// <summary>
         /// このクラスから取得可能なデータ型。

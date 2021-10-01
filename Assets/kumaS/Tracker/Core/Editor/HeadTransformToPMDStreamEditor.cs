@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace kumaS.Tracker.Core.Editor
 {
+    [CustomEditor(typeof(HeadTransformToPMDStream))]
     public class HeadTransformToPMDStreamEditor : UnityEditor.Editor
     {
         private readonly Dictionary<string, SerializedProperty> property = new Dictionary<string, SerializedProperty>();
@@ -47,7 +48,7 @@ namespace kumaS.Tracker.Core.Editor
             EditorGUILayout.LabelField("Convert setting", EditorStyles.boldLabel);
             using (new EditorGUI.IndentLevelScope())
             {
-                EditorGUILayout.PropertyField(property[nameof(EyeRotationToPMDStream.forward)], new GUIContent("Forward"));
+                EditorGUILayout.PropertyField(property[nameof(HeadTransformToPMDStream.center)], new GUIContent("Center"));
             }
 
             serializedObject.ApplyModifiedProperties();

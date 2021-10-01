@@ -4,6 +4,7 @@ using kumaS.Tracker.Core;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -74,11 +75,12 @@ namespace kumaS.Tracker.PoseNet
 
         private TransformTo3d[] workers;
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<BodyPoints> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 if (isDebugPosition)
                 {
@@ -98,7 +100,8 @@ namespace kumaS.Tracker.PoseNet
             return new DebugMessage(data, message);
         }
 
-        protected override void InitInternal(int thread)
+        /// <inheritdoc/>
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             var dkey = new List<string>();
             var px = new List<string>();
@@ -149,9 +152,10 @@ namespace kumaS.Tracker.PoseNet
             isAvailable.Value = true;
         }
 
+        /// <inheritdoc/>
         protected override SchedulableData<BodyPoints> ProcessInternal(SchedulableData<PoseNetLandmarks> input)
         {
-            if (!input.IsSuccess)
+            if (!input.IsSuccess || input.IsSignal)
             {
                 return new SchedulableData<BodyPoints>(input, default);
             }
@@ -169,9 +173,10 @@ namespace kumaS.Tracker.PoseNet
                 }
             }
 
-            return new SchedulableData<BodyPoints>(input, default, false, "スレッドを確保できませんでした");
+            return new SchedulableData<BodyPoints>(input, default, false, true, errorMessage: "スレッドを確保できませんでした");
         }
 
+        /// <inheritdoc/>
         private async UniTask<BodyPoints> ProcessInternalAsync(PoseNetLandmarks input, int thread)
         {
             await UniTask.SwitchToMainThread();
@@ -181,7 +186,8 @@ namespace kumaS.Tracker.PoseNet
             return new BodyPoints(workers[thread].Position.ToArray(), workers[thread].Rotation.ToArray());
         }
 
-        private void OnDestroy()
+        /// <inheritdoc/>
+        public override void Dispose()
         {
             foreach (TransformTo3d worker in workers)
             {

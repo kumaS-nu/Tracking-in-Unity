@@ -105,6 +105,14 @@ namespace kumaS.Tracker.Dlib
             EditorGUILayout.Space();
 
             EditorGUILayout.LabelField("Predict setting", EditorStyles.boldLabel);
+            using (new EditorGUI.IndentLevelScope())
+            {
+                EditorGUILayout.PropertyField(property[nameof(DlibBBStream.interval)], new GUIContent("Interval"));
+                if(property[nameof(DlibBBStream.interval)].intValue < 0)
+                {
+                    property[nameof(DlibBBStream.interval)].intValue = 0;
+                }
+            }
 
             serializedObject.ApplyModifiedProperties();
         }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 
 using UnityEngine;
 
@@ -19,7 +20,8 @@ namespace kumaS.Tracker.Core
         private readonly string Left_Close_Value = nameof(Left_Close_Value);
         private readonly string Right_Close_Value = nameof(Right_Close_Value);
 
-        protected override EyeCloseValue Average(EyeCloseValue[] datas)
+        /// <inheritdoc/>
+        protected override EyeCloseValue Average(EyeCloseValue[] datas, EyeCloseValue remove, bool isRemoved)
         {
             var leftSum = 0f;
             var rightSum = 0f;
@@ -31,6 +33,7 @@ namespace kumaS.Tracker.Core
             return new EyeCloseValue(leftSum / datas.Length, rightSum / datas.Length);
         }
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<EyeCloseValue> data)
         {
             var message = new Dictionary<string, string>();
@@ -43,6 +46,7 @@ namespace kumaS.Tracker.Core
             return new DebugMessage(data, message);
         }
 
+        /// <inheritdoc/>
         protected override bool ValidateData(EyeCloseValue input)
         {
             if (lastOutput == default)
@@ -57,5 +61,11 @@ namespace kumaS.Tracker.Core
 
             return true;
         }
+
+        /// <inheritdoc/>
+        public override void Dispose(){ }
+
+        /// <inheritdoc/>
+        protected override void InitInternal2(int thread, CancellationToken token) { }
     }
 }

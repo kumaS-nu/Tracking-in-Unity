@@ -15,6 +15,11 @@ namespace kumaS.Tracker.Core
         public bool IsSuccess { get; private set; }
 
         /// <summary>
+        /// これはシグナルか。
+        /// </summary>
+        public bool IsSignal { get; private set; }
+
+        /// <summary>
         /// エラー内容。
         /// </summary>
         public string ErrorMessage { get; private set; }
@@ -45,10 +50,17 @@ namespace kumaS.Tracker.Core
         /// <param name="input">入力のスケジュール可能なデータ。</param>
         /// <param name="data">出力データ。</param>
         /// <param name="isSuccess">この段階で失敗したとき<c>false</c>にする。</param>
+        /// <param name="isSignal">このデータはシグナルか。</param>
         /// <param name="errorMessage">この段階でのエラー内容。</param>
-        public SchedulableData(ISchedulableMetadata input, T data, bool isSuccess = true, string errorMessage = "")
+        public SchedulableData(ISchedulableMetadata input, T data, bool isSuccess = true, bool isSignal = false, bool enfoce = false, string errorMessage = "")
         {
             IsSuccess = input.IsSuccess && isSuccess;
+            IsSignal = input.IsSignal || isSignal;
+            if (enfoce)
+            {
+                IsSuccess = true;
+                IsSignal = false;
+            }
             if (isSuccess)
             {
                 ErrorMessage = input.ErrorMessage;
@@ -76,10 +88,12 @@ namespace kumaS.Tracker.Core
         /// <param name="id">ソースのId。</param>
         /// <param name="startTime">パイプライン処理の開始時間。</param>
         /// <param name="isSuccess">このデータは成功いるか。</param>
+        /// <param name="isSignal">このデータはシグナルか。</param>
         /// <param name="errorMessage">エラー内容。</param>
-        public SchedulableData(T data, int id, DateTime startTime, bool isSuccess = true, string errorMessage = "")
+        public SchedulableData(T data, int id, DateTime startTime, bool isSuccess = true, bool isSignal = false, string errorMessage = "")
         {
             IsSuccess = isSuccess;
+            IsSignal = isSignal;
             ErrorMessage = errorMessage;
             StartTime = startTime;
             SourceId = id;

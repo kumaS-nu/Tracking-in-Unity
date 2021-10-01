@@ -1,5 +1,6 @@
 {
     "name": "kumaS.Tracker.VRM.Editor",
+    "rootNamespace": "kumaS.Tracker.VRM.Editor",
     "references": [
         "GUID:044d91857fdb8224baaeef6660f799a8",
         "GUID:88cb34a1cc3ea1c4a95081918605135d",

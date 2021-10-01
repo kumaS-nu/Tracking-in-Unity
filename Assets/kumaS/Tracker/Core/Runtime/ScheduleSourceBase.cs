@@ -44,9 +44,9 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// ソースをobjectに変換。
         /// </summary>
-        public async UniTask<object> GetSource(DateTime startTime, CancellationToken token)
+        public async UniTask<object> GetSource(DateTime startTime)
         {
-            SchedulableData<T> source = await SourceInternal(startTime, token);
+            SchedulableData<T> source = await SourceInternal(startTime);
             return source;
         }
 
@@ -54,10 +54,10 @@ namespace kumaS.Tracker.Core
         /// データを取得するコードを書く。デフォルトでスレッドプール上で走る。
         /// </summary>
         /// <returns>データ</returns>
-        protected abstract UniTask<SchedulableData<T>> SourceInternal(DateTime startTime, CancellationToken token);
+        protected abstract UniTask<SchedulableData<T>> SourceInternal(DateTime startTime);
 
         /// <summary>
-        /// 現在利用可能か。初期化が終わったら<c>true</c>を返すように。（初期化は<c>Awake()</c>等で。）
+        /// 現在利用可能か。初期化が終わったら<c>true</c>を返すように。
         /// </summary>
         public abstract IReadOnlyReactiveProperty<bool> IsAvailable { get; }
 
@@ -91,5 +91,16 @@ namespace kumaS.Tracker.Core
         /// <param name="data">デバッグで表示するつもりのデータ。</param>
         /// <returns>デバッグで表示するデータ。</returns>
         protected abstract IDebugMessage DebugLogInternal(SchedulableData<T> data);
+
+        /// <summary>
+        /// 派生クラスではここに初期化処理を書く。初期化が終わったら利用可能にするのを忘れずに。
+        /// </summary>
+        /// <param name="thread">用意するスレッド数。</param>
+        public abstract void Init(int thread, CancellationToken token);
+
+        /// <summary>
+        /// 派生クラスではこのソースを破棄する時の処理を書く。
+        /// </summary>
+        public abstract void Dispose();
     }
 }

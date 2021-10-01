@@ -4,6 +4,7 @@ using Live2D.Cubism.Core;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -24,15 +25,6 @@ namespace kumaS.Tracker.Live2D
 
         private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
-        private void Awake()
-        {
-            foreach (CubismParameter p in model.Parameters)
-            {
-                parameters[p.Id] = p;
-            }
-            isAvailable.Value = true;
-        }
-
         protected override void ProcessInternal(SchedulableData<PredictedLive2DData> input)
         {
             foreach (KeyValuePair<string, float> p in input.Data.Parameter)
@@ -42,6 +34,17 @@ namespace kumaS.Tracker.Live2D
                     parameter.Value = p.Value;
                 }
             }
+        }
+
+        public override void Dispose(){ }
+
+        public override void Init(int thread, CancellationToken token)
+        {
+            foreach (CubismParameter p in model.Parameters)
+            {
+                parameters[p.Id] = p;
+            }
+            isAvailable.Value = true;
         }
     }
 }

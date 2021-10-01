@@ -14,6 +14,11 @@ namespace kumaS.Tracker.Core
         bool IsSuccess { get; }
 
         /// <summary>
+        /// これはシグナルか。
+        /// </summary>
+        bool IsSignal { get; }
+
+        /// <summary>
         /// エラー内容。
         /// </summary>
         string ErrorMessage { get; }

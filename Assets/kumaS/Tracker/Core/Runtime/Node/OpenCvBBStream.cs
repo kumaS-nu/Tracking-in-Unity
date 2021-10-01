@@ -1,4 +1,6 @@
-﻿using OpenCvSharp;
+﻿using Cysharp.Threading.Tasks;
+
+using OpenCvSharp;
 
 using System;
 using System.Collections.Generic;
@@ -45,25 +47,40 @@ namespace kumaS.Tracker.Core
         private readonly string Height = nameof(Height);
         private readonly string Angle = nameof(Angle);
 
-        protected override void InitInternal(int thread)
+        protected override async void InitInternal(int thread, CancellationToken token)
         {
             predictor = new CascadeClassifier[thread];
-            for (var i = 0; i < thread; i++)
+            List<UniTask> tasks = new List<UniTask>();
+            try
             {
-                predictor[i] = new CascadeClassifier();
-                if (!predictor[i].Load(filePath))
+                for (var i = 0; i < thread; i++)
                 {
-                    new ArgumentException("カスケード分類のファイルを読み込めませんでした。");
+                    tasks.Add(LoadAsync(i));
                 }
+            await UniTask.WhenAll(tasks);
+            }
+            catch (Exception)
+            {
+                throw;
             }
             isAvailable.Value = true;
+        }
+
+        private async UniTask LoadAsync(int thread)
+        {
+            await UniTask.SwitchToThreadPool();
+            predictor[thread] = new CascadeClassifier();
+            if (!predictor[thread].Load(filePath))
+            {
+                new ArgumentException("カスケード分類のファイルを読み込めませんでした。");
+            }
         }
 
         protected override SchedulableData<BoundaryBox> ProcessInternal(SchedulableData<Mat> input)
         {
             try
             {
-                if (!input.IsSuccess)
+                if (!input.IsSuccess || input.IsSignal)
                 {
                     return new SchedulableData<BoundaryBox>(input, default);
                 }
@@ -82,7 +99,7 @@ namespace kumaS.Tracker.Core
                         OpenCvSharp.Rect[] box = predictor[thread].DetectMultiScale(input.Data);
                         if (box.Length == 0)
                         {
-                            return new SchedulableData<BoundaryBox>(input, default, false, "顔が検出されませんでした。");
+                            return new SchedulableData<BoundaryBox>(input, default, false, true, errorMessage: "顔が検出されませんでした。");
                         }
                         var bb = new BoundaryBox(input.Data, new UnityEngine.Rect(box[0].Left, box[0].Top, box[0].Width, box[0].Height));
                         return new SchedulableData<BoundaryBox>(input, bb);
@@ -94,15 +111,12 @@ namespace kumaS.Tracker.Core
                 }
                 else
                 {
-                    return new SchedulableData<BoundaryBox>(input, default, false, "スレッドを確保できませんでした。");
+                    return new SchedulableData<BoundaryBox>(input, default, false, true, errorMessage: "スレッドを確保できませんでした。");
                 }
             }
             finally
             {
-                if (ResourceManager.isRelease(typeof(Mat), Id))
-                {
-                    input.Data.Dispose();
-                }
+                ResourceManager.DisposeIfRelease(input.Data, Id);
             }
         }
 
@@ -110,7 +124,7 @@ namespace kumaS.Tracker.Core
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
@@ -124,6 +138,17 @@ namespace kumaS.Tracker.Core
                 }
             }
             return new DebugMessage(data, message);
+        }
+
+        public override void Dispose()
+        {
+            foreach (CascadeClassifier p in predictor)
+            {
+                if (p.IsEnabledDispose)
+                {
+                    p.Dispose();
+                }
+            }
         }
     }
 }

@@ -56,12 +56,25 @@ namespace kumaS.Tracker.Core
         }
 
         /// <summary>
+        /// もし開放すべきリソースであれば解放する。
+        /// </summary>
+        /// <typeparam name="T">解放する型。</typeparam>
+        /// <param name="obj">解放するオブジェクト。</param>
+        /// <param name="id">ノードのId。</param>
+        public static void DisposeIfRelease<T>(T obj, int id) where T: IDisposable
+        {
+            if(obj != null && IsRelease(obj.GetType(), id)){
+                obj.Dispose();
+            }
+        }
+
+        /// <summary>
         /// 型とノードのIdから解放するものか返す。
         /// </summary>
-        /// <param name="type">型。</param>
-        /// <param name="id">Id。</param>
+        /// <param name="type">解放する型。</param>
+        /// <param name="id">ノードのId。</param>
         /// <returns>解放するか。</returns>
-        public static bool isRelease(Type type, int id)
+        private static bool IsRelease(Type type, int id)
         {
             return releaseId[type].Contains(id);
         }

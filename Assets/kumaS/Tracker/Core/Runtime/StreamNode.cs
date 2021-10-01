@@ -13,7 +13,7 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// スケジュール可能なストリーム。
         /// </summary>
-        internal object Schedulable { get; }
+        internal ISchedule Schedulable { get; }
 
         /// <summary>
         /// この前のノード。
@@ -75,55 +75,29 @@ namespace kumaS.Tracker.Core
         private IObservable<object> mainStream;
 
         /// <summary>
-        /// 時間のストリームを設定。
-        /// </summary>
-        internal IObservable<ElapsedTimeLog> TimeStream { set => timeStream = value; }
-
-        /// <summary>
-        /// 時間のストリームを取得。
-        /// </summary>
-        /// <param name="stream">ストリーム。</param>
-        /// <returns>成功したか。</returns>
-        internal bool TryGetTimeStream(out IObservable<ElapsedTimeLog> stream)
-        {
-            if (timeStream != null && Schedulable is IScheduleDestination)
-            {
-                stream = timeStream;
-                return true;
-            }
-            stream = default;
-            return false;
-        }
-        private IObservable<ElapsedTimeLog> timeStream;
-
-        /// <summary>
         /// エラーのストリームを設定。
         /// </summary>
-        internal IObservable<object> ErrorStream { set => errorStream = value; }
+        internal IObservable<object> FinishStream { set => finishStream = value; }
 
         /// <summary>
-        /// エラーのストリームを取得。
+        /// 終点のストリームを取得。
         /// </summary>
         /// <param name="stream">ストリーム。</param>
         /// <returns>成功したか。</returns>
-        internal bool TryGetErrorStream(out IObservable<object> stream)
+        internal bool TryGetFinishStream(out IObservable<object> stream)
         {
-            if (errorStream != null && Schedulable is IScheduleDestination)
+            if (finishStream != null && Schedulable is IScheduleDestination)
             {
-                stream = errorStream;
+                stream = finishStream;
                 return true;
             }
             stream = default;
             return false;
         }
-        private IObservable<object> errorStream;
+        private IObservable<object> finishStream;
 
-        internal StreamNode(object schedulable)
+        internal StreamNode(ISchedule schedulable)
         {
-            if (!(schedulable is IScheduleSource || schedulable is IScheduleStream || schedulable is IScheduleDestination))
-            {
-                throw new ArgumentException("schedulableが不正な型です。");
-            }
             Schedulable = schedulable;
         }
     }

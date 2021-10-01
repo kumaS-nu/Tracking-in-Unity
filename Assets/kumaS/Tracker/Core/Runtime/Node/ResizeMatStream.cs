@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -27,33 +28,37 @@ namespace kumaS.Tracker.Core
 
         private readonly string Resized_Pointer = nameof(Resized_Pointer);
 
-        protected override void InitInternal(int thread) { }
+        /// <inheritdoc/>
+        protected override void InitInternal(int thread, CancellationToken token) { }
 
+        /// <inheritdoc/>
         protected override SchedulableData<Mat> ProcessInternal(SchedulableData<Mat> input)
         {
-            if (!input.IsSuccess)
+            if (!input.IsSuccess || input.IsSignal)
             {
                 return new SchedulableData<Mat>(input, default);
             }
             var resized = new Mat();
             Cv2.Resize(input.Data, resized, Size.Zero, ratio, ratio, interpolation);
             input.Data.Dispose();
-            if (ResourceManager.isRelease(typeof(Mat), Id))
-            {
-                resized.Dispose();
-            }
+            ResourceManager.DisposeIfRelease(resized, Id);
+            
             return new SchedulableData<Mat>(input, resized);
         }
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<Mat> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess && !data.Data.IsDisposed)
+            if (data.IsSuccess && !data.Data.IsDisposed && !data.IsSignal)
             {
                 message[Resized_Pointer] = data.Data.Data.ToInt32().ToString();
             }
             return new DebugMessage(data, message);
         }
+
+        /// <inheritdoc/>
+        public override void Dispose(){ }
     }
 }

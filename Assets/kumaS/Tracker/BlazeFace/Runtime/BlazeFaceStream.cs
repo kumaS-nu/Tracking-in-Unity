@@ -67,7 +67,7 @@ namespace kumaS.Tracker.BlazeFace
         private float minScoreInternal = 0;
         private volatile int skipped = 0;
 
-        protected override void InitInternal(int thread)
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             minScoreInternal = -Mathf.Log(1 / minScore - 1);
             normalizers = new Normalizer[thread];
@@ -115,20 +115,11 @@ namespace kumaS.Tracker.BlazeFace
             debugKey = key.ToArray();
         }
 
-        private void OnDestroy()
-        {
-            foreach (Normalizer normalizer in normalizers)
-            {
-                normalizer.Input.Dispose();
-                normalizer.Output.Dispose();
-            }
-        }
-
         protected override IDebugMessage DebugLogInternal(SchedulableData<BlazeFaceLandmarks> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
@@ -177,14 +168,11 @@ namespace kumaS.Tracker.BlazeFace
                     }
                 }
 
-                return new SchedulableData<BlazeFaceLandmarks>(input, default, false, "スレッドを確保できませんでした。");
+                return new SchedulableData<BlazeFaceLandmarks>(input, default, false, true, errorMessage: "スレッドを確保できませんでした。");
             }
             finally
             {
-                if (ResourceManager.isRelease(typeof(Mat), Id))
-                {
-                    input.Data.Dispose();
-                }
+                ResourceManager.DisposeIfRelease(input.Data, Id);
             }
         }
 
@@ -209,7 +197,7 @@ namespace kumaS.Tracker.BlazeFace
 
             if (max < minScoreInternal || index == -1)
             {
-                return new SchedulableData<BlazeFaceLandmarks>(input, default, false, "顔が見つかりませんでした");
+                return new SchedulableData<BlazeFaceLandmarks>(input, default, false, true, errorMessage: "顔が見つかりませんでした");
             }
 
             float anchorY;
@@ -240,6 +228,20 @@ namespace kumaS.Tracker.BlazeFace
             var angle = Mathf.Atan2(landmarks[3].x - landmarks[2].x, landmarks[3].y - landmarks[2].x);
             var ret = new BlazeFaceLandmarks(input.Data, landmarks, new UnityEngine.Rect((centerX - width / 2) * scaleX, (centerY - height / 2) * scaleY, width * scaleX, height * scaleY), angle);
             return new SchedulableData<BlazeFaceLandmarks>(input, ret);
+        }
+
+        public override void Dispose()
+        {
+            foreach (Normalizer normalizer in normalizers)
+            {
+                normalizer.Input.Dispose();
+                normalizer.Output.Dispose();
+            }
+
+            foreach (IWorker worker in workers)
+            {
+                worker.Dispose();
+            }
         }
     }
 }

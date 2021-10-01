@@ -107,6 +107,12 @@ namespace kumaS.Tracker.Core
         internal BoolReactiveProperty isDebug = new BoolReactiveProperty(false);
 
         /// <value>
+        /// エラーを表示するか。
+        /// </value>
+        [SerializeField]
+        internal BoolReactiveProperty isShowError = new BoolReactiveProperty(true);
+
+        /// <value>
         /// デバッグ出力をファイルに書き込むか。
         /// </value>
         [SerializeField]
@@ -134,9 +140,15 @@ namespace kumaS.Tracker.Core
 
         private readonly Dictionary<int, StreamWriter> streamWriters = new Dictionary<int, StreamWriter>();
 
-        private readonly List<StreamSourceInfomation> sourceInfomations = new List<StreamSourceInfomation>();
+        private readonly Dictionary<int, StreamSourceRunner> sourceRunners = new Dictionary<int, StreamSourceRunner>();
 
-        private readonly Dictionary<int, int> sourceInfomationIndex = new Dictionary<int, int>();
+        private CompositeDisposable disposable = new CompositeDisposable();
+
+        private CancellationTokenSource source = new CancellationTokenSource();
+
+        private bool broken = false;
+
+        public bool Broken { get => broken; }
 
         private void Reset()
         {
@@ -147,21 +159,38 @@ namespace kumaS.Tracker.Core
             }
         }
 
-        private void Awake()
+        private void Start()
         {
+            Application.wantsToQuit += ShouldQuit;
+            Debug.Log("開始しています...");
+            _ = Initialize(source.Token);
+        }
+
+        private void Detouch()
+        {
+            Application.wantsToQuit -= ShouldQuit;
+        }
+
+        private bool ShouldQuit()
+        {
+            return disposable.IsDisposed;
+        }
+
+        async UniTaskVoid Initialize(CancellationToken token)
+        {
+            await UniTask.DelayFrame(5);
             var builder = new StreamBuilder(sources, streams, destinations, streamUnitStarts, streamInputs, streamOutputs);
-            allNodes = builder.Build(gameObject);
+            allNodes = builder.Build(disposable, OnError);
 
-            InitializeEachNode();
+            _ = InitializeEachNode(token);
 
-            var timeStreams = new List<IObservable<ElapsedTimeLog>>();
-            var errorStreams = new List<IObservable<object>>();
+            var finishStreams = new List<IObservable<object>>();
             var startIds = new List<int>();
             foreach (StreamNode node in allNodes)
             {
                 if (node.TryGetSourceStream(out Subject<object> sStream))
                 {
-                    sourceInfomations.Add(new StreamSourceInfomation(allNodes.IndexOf(node), sStream, (IScheduleSource)node.Schedulable, fps[sourceInfomations.Count], DateTime.MinValue, thread));
+                    sourceRunners[allNodes.IndexOf(node)] = new StreamSourceRunner(allNodes.IndexOf(node), sStream, (IScheduleSource)node.Schedulable, fps[sourceRunners.Count], thread);
                 }
 
                 if (node.TryGetMainStream(out IObservable<object> mStream))
@@ -181,48 +210,70 @@ namespace kumaS.Tracker.Core
                     debugStreams.Add(mStream.Select(schedulable.DebugLog).Select(AddNodeInfo));
                 }
 
-                if (node.TryGetTimeStream(out IObservable<ElapsedTimeLog> tStream))
+                if (node.TryGetFinishStream(out IObservable<object> eStream))
                 {
-                    timeStreams.Add(tStream);
+                    finishStreams.Add(eStream);
                     startIds.AddRange(node.StartId);
                 }
 
-                if (node.TryGetErrorStream(out IObservable<object> eStream))
-                {
-                    errorStreams.Add(eStream);
-                }
-
-                ((ISchedule)node.Schedulable).Id = allNodes.IndexOf(node);
+                node.Schedulable.Id = allNodes.IndexOf(node);
             }
 
-            foreach (var index in startIds)
+            var fpsKey = new List<string>();
+            foreach (var runner in sourceRunners)
             {
-                ++sourceInfomations.First(info => info.id == index).destinationCount;
+                foreach (var startId in startIds)
+                {
+                    runner.Value.SetDestinationCount(startId);
+                }
+                fpsKey.Add(runner.Value.Label);
             }
+            fpsDebugKey = fpsKey.ToArray();
+
             nodeIsDebug.Add(isDebugFPS);
             debugStreams.Add(fpsSource);
 
-            nodeIsDebug.Merge().Merge(isDebug, isWriteFile).Subscribe(_ => SetDebugStream()).AddTo(this);
+            nodeIsDebug.Merge().Merge(isDebug, isWriteFile).Subscribe(_ => SetDebugStream()).AddTo(disposable);
 
-            errorStreams.Merge().Cast<object, ISchedulableMetadata>().Where(data => isDebug.Value && !data.IsSuccess)
-                .ObserveOnMainThread().Subscribe(ShowError).AddTo(this);
+            var finishStream = finishStreams.Merge().Cast<object, ISchedulableMetadata>().Share();
 
-            var fpsKey = new List<string>();
-            foreach (StreamSourceInfomation sourceInfomation in sourceInfomations)
+            var missStream = finishStream.Where(data => data.ErrorMessage != "").Share();
+            missStream.Subscribe(UpdateMissCount).AddTo(disposable);
+            if (isShowError.Value && isDebug.Value)
             {
-                sourceInfomationIndex.Add(sourceInfomation.id, sourceInfomations.IndexOf(sourceInfomation));
-                fpsKey.Add(sourceInfomation.id + sourceInfomation.scheduleSource.ProcessName);
+                missStream.ObserveOnMainThread().Subscribe(ShowError).AddTo(disposable);
             }
-            fpsDebugKey = fpsKey.ToArray();
-            timeStreams.Merge().Subscribe(SetInterval).AddTo(this);
+
+            finishStream.Where(data => data.ErrorMessage == "").Subscribe(UpdateElapsedTime).AddTo(disposable);
 
             ResourceManager.SetResource(allNodes);
 
             var dummyProperty = new ReactiveProperty<bool>(false);
-            Observable.Merge(allNodes.Select(node => ((ISchedule)node.Schedulable).IsAvailable)).Merge(dummyProperty)
-                .First(_ => allNodes.All(node => ((ISchedule)node.Schedulable).IsAvailable.Value)).Select((_) => this.GetCancellationTokenOnDestroy())
-                .Subscribe(token => _ = UniTask.RunOnThreadPool(() => ScheduleLoop(token))).AddTo(this);
+            Observable.Merge(allNodes.Select(node => node.Schedulable.IsAvailable)).Merge(dummyProperty)
+                .First(_ => allNodes.All(node => node.Schedulable.IsAvailable.Value)).Do(_ => Debug.Log("開始しました．"))
+                .Subscribe(_ => UniTask.RunOnThreadPool(() => ScheduleLoop(source.Token)), _ => broken = true).AddTo(disposable);
             dummyProperty.Value = true;
+        }
+
+        private void OnError(Exception e)
+        {
+            broken = true;
+            Debug.LogException(e);
+            source.Cancel();
+            var isRunnings = sourceRunners.Select(runner => runner.Value.IsRunning);
+            isRunnings.Merge().Select(_ => source.Token).ObserveOn(Scheduler.ThreadPool).Subscribe(token =>
+            {
+                if (isRunnings.All(value => !value.Value) && token.IsCancellationRequested)
+                {
+                    foreach (var node in allNodes)
+                    {
+                        node.Schedulable.Dispose();
+                    }
+                    source.Dispose();
+                    disposable.Dispose();
+                    Application.Quit();
+                }
+            }).AddTo(disposable);
         }
 
         /// <summary>
@@ -293,7 +344,7 @@ namespace kumaS.Tracker.Core
                         currentDebugStreams.Add(debugStreams[i]);
                     }
                 }
-                debugStream = currentDebugStreams.Merge().ObserveOnMainThread().Subscribe(OutputDebug).AddTo(this);
+                debugStream = currentDebugStreams.Merge().ObserveOnMainThread().Subscribe(OutputDebug).AddTo(disposable);
             }
         }
 
@@ -360,6 +411,15 @@ namespace kumaS.Tracker.Core
             }
         }
 
+        private void UpdateMissCount(ISchedulableMetadata data)
+        {
+            sourceRunners[data.SourceId].UpdateMissCount(data.StartTime);
+        }
+
+        /// <summary>
+        /// エラーを見せる。
+        /// </summary>
+        /// <param name="data">エラー内容。</param>
         private void ShowError(ISchedulableMetadata data)
         {
             Debug.LogError(data.ErrorMessage);
@@ -368,52 +428,39 @@ namespace kumaS.Tracker.Core
         /// <summary>
         /// ストリームの各ノードを初期化する。
         /// </summary>
-        private void InitializeEachNode()
+        private async UniTask InitializeEachNode(CancellationToken token)
         {
-            var failed = false;
+            List<UniTask> tasks = new List<UniTask>();
             foreach (StreamNode node in allNodes)
             {
                 try
                 {
-                    var stream = node.Schedulable as IScheduleStream;
-                    if (stream != null)
+                    tasks.Add(UniTask.Run(async () =>
                     {
-                        stream.Init(thread);
-                    }
+                        await UniTask.SwitchToMainThread();
+                        node.Schedulable.Init(thread, token);
+                    }));
                 }
                 catch (Exception e)
                 {
-                    failed = true;
-                    Debug.LogError(((ISchedule)node.Schedulable).ProcessName + e.ToString());
+                    broken = true;
+                    Debug.LogError(node.Schedulable.ProcessName + e.ToString());
+                    source.Dispose();
+                    disposable.Dispose();
+                    Application.Quit();
                 }
             }
-
-            if (failed)
-            {
-                Application.Quit();
-            }
+            await tasks;
         }
 
         /// <summary>
-        /// ソースを流すインターバルを設定。
+        /// 経過時間をアップデートする。
         /// </summary>
-        /// <param name="time">計測された時間。</param>
-        private void SetInterval(ElapsedTimeLog time)
+        /// <param name="time">データ。</param>
+        private void UpdateElapsedTime(ISchedulableMetadata time)
         {
-            StreamSourceInfomation sourceInfomation = sourceInfomations[sourceInfomationIndex[time.SourceId]];
-            sourceInfomation.elapsedTimes.TryAdd(time.StartTime, new ConcurrentBag<TimeSpan>());
-            ConcurrentBag<TimeSpan> elapsedTimes = sourceInfomation.elapsedTimes[time.StartTime];
-            elapsedTimes.Add(time.ElapsedTime);
-            if (elapsedTimes.Count == sourceInfomation.destinationCount)
-            {
-                ConcurrentQueue<TimeSpan> buffer = sourceInfomation.elapsedTimeBuffer;
-                buffer.Enqueue(new TimeSpan(elapsedTimes.Sum(t => t.Ticks) / sourceInfomation.destinationCount));
-                buffer.TryDequeue(out _);
-                sourceInfomation.elapsedTimes.TryRemove(time.StartTime, out _);
-                var interval = buffer.Sum(t => t.Ticks) / buffer.Count / thread;
-                interval = interval < sourceInfomation.baseInterval ? sourceInfomation.baseInterval : interval;
-                sourceInfomation.interval = new TimeSpan(interval);
-            }
+            var elapsedTime = new ElapsedTimeLog(time.SourceId, time.StartTime, new TimeSpan(time.ElapsedTimes.Sum(t => t.Ticks)));
+            sourceRunners[time.SourceId].UpdateElapsedTime(elapsedTime);
         }
 
         /// <summary>
@@ -424,42 +471,15 @@ namespace kumaS.Tracker.Core
         private async UniTask ScheduleLoop(CancellationToken token)
         {
             Observable.Interval(TimeSpan.FromSeconds(1)).Subscribe(_ => LogFPS()).AddTo(token);
-
-            while (true)
+            while (!token.IsCancellationRequested)
             {
-                token.ThrowIfCancellationRequested();
-                DateTime now = DateTime.Now;
-                foreach (StreamSourceInfomation sourceInfomation in sourceInfomations)
+                foreach (var runner in sourceRunners)
                 {
-                    LinkedList<DateTime> updates = sourceInfomation.updates;
-                    if (now - updates.Last.Value >= sourceInfomation.interval)
-                    {
-                        lock (updates)
-                        {
-                            updates.AddLast(now);
-                            if (updates.Count > 50)
-                            {
-                                updates.RemoveFirst();
-                            }
-                        }
-                        UniTask.RunOnThreadPool(() => Distribute(now, sourceInfomation, token)).Forget();
-                    }
+                    runner.Value.Run();
                 }
 
                 await UniTask.WaitForEndOfFrame();
             }
-        }
-
-        /// <summary>
-        /// ソースを流す。
-        /// </summary>
-        /// <param name="sourceInfomation">流すソース。</param>
-        /// <param name="now">判断時間。</param>
-        private async UniTask Distribute(DateTime startTime, StreamSourceInfomation sourceInfomation, CancellationToken token)
-        {
-            var source = await sourceInfomation.scheduleSource.GetSource(startTime, token);
-            token.ThrowIfCancellationRequested();
-            sourceInfomation.source.OnNext(source);
         }
 
         /// <summary>
@@ -468,11 +488,26 @@ namespace kumaS.Tracker.Core
         private void LogFPS()
         {
             var data = new Dictionary<string, string>();
-            foreach (StreamSourceInfomation infomation in sourceInfomations)
+            foreach (var runner in sourceRunners)
             {
-                data.Add(infomation.id + infomation.scheduleSource.ProcessName, (1 / (infomation.updates.Last.Value - infomation.updates.First.Value).TotalSeconds * infomation.updates.Count).ToString());
+                runner.Value.LogFPS(data);
             }
             fpsSource.OnNext(new DebugFPS(data));
+        }
+
+        public async UniTask Dispose()
+        {
+            var isRunnings = sourceRunners.Select(runner => runner.Value.IsRunning);
+            var stoped = isRunnings.Merge().Skip(1).Select(_ => source.Token).First(token => isRunnings.All(value => !value.Value) && token.IsCancellationRequested).ToUniTask();
+            source.Cancel();
+            await stoped;
+            await UniTask.SwitchToMainThread();
+            foreach (var node in allNodes)
+            {
+                node.Schedulable.Dispose();
+            }
+            source.Dispose();
+            disposable.Dispose();
         }
     }
 }

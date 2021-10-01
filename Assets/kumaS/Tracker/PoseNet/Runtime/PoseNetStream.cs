@@ -6,6 +6,7 @@ using OpenCvSharp;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -71,7 +72,7 @@ namespace kumaS.Tracker.PoseNet
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
@@ -87,7 +88,7 @@ namespace kumaS.Tracker.PoseNet
             return new DebugMessage(data, message);
         }
 
-        protected override void InitInternal(int thread)
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             if (modelType == 0)
             {
@@ -112,14 +113,6 @@ namespace kumaS.Tracker.PoseNet
             }
             MakeDebugKey();
             isAvailable.Value = true;
-        }
-
-        private void OnDestroy()
-        {
-            foreach (PoseNetBase model in models)
-            {
-                model.Dispose();
-            }
         }
 
         private void MakeDebugKey()
@@ -149,7 +142,7 @@ namespace kumaS.Tracker.PoseNet
         {
             try
             {
-                if (!input.IsSuccess)
+                if (!input.IsSuccess || input.IsSignal)  
                 {
                     return new SchedulableData<PoseNetLandmarks>(input, default);
                 }
@@ -161,7 +154,7 @@ namespace kumaS.Tracker.PoseNet
                         PoseNetLandmarks pose = models[thread].Execute(input.Data).ToObservable().Wait();
                         if (pose == default)
                         {
-                            return new SchedulableData<PoseNetLandmarks>(input, default, false, "顔が見つかりませんでした");
+                            return new SchedulableData<PoseNetLandmarks>(input, default, false, true, errorMessage: "顔が見つかりませんでした");
                         }
 
                         return new SchedulableData<PoseNetLandmarks>(input, pose);
@@ -173,15 +166,20 @@ namespace kumaS.Tracker.PoseNet
                 }
                 else
                 {
-                    return new SchedulableData<PoseNetLandmarks>(input, default, false, "スレッドを確保できませんでした。");
+                    return new SchedulableData<PoseNetLandmarks>(input, default, false, true, errorMessage: "スレッドを確保できませんでした。");
                 }
             }
             finally
             {
-                if (ResourceManager.isRelease(typeof(Mat), Id))
-                {
-                    input.Data.Dispose();
-                }
+                ResourceManager.DisposeIfRelease(input.Data, Id);
+            }
+        }
+
+        public override void Dispose()
+        {
+            foreach (PoseNetBase model in models)
+            {
+                model.Dispose();
             }
         }
     }

@@ -1,11 +1,13 @@
 ﻿using Cysharp.Threading.Tasks;
 
 using System;
-using System.Collections.Concurrent;
+using System.Linq;
 
 using UniRx;
 
 using UnityEngine;
+using System.Threading;
+using System.Collections.Generic;
 
 namespace kumaS.Tracker.Core
 {
@@ -15,55 +17,105 @@ namespace kumaS.Tracker.Core
     /// <typeparam name="T">平滑化するデータの型。</typeparam>
     public abstract class SmoothingStreamBase<T> : ScheduleStreamBase<T, T>
     {
-        [SerializeField]
         public int bufferSize = 8;
 
-        [SerializeField]
         public KeyCode resetKey = KeyCode.R;
 
         public override Type[] UseType { get; } = new Type[0];
         public override IReadOnlyReactiveProperty<bool> IsAvailable { get; } = new ReactiveProperty<bool>(true);
 
-        protected ConcurrentQueue<T> buffer = new ConcurrentQueue<T>();
+        protected LinkedList<T> buffer = new LinkedList<T>();
         protected T lastOutput = default;
         private volatile bool isRequiredReset = false;
 
-        protected override void InitInternal(int thread)
+        /// <inheritdoc/>
+        protected override void InitInternal(int thread, CancellationToken token)
         {
+            InitInternal2(thread, token);
+            var interfaces = typeof(T).GetInterfaces();
             Observable.EveryUpdate().Where(_ => Input.GetKey(resetKey)).Subscribe(_ => isRequiredReset = true).AddTo(this);
         }
 
+        /// <summary>
+        /// 初期化処理をここに書く。
+        /// </summary>
+        /// <param name="thread">スレッド数。</param>
+        /// <param name="token">キャンセル要求。</param>
+        protected abstract void InitInternal2(int thread, CancellationToken token);
+
+        /// <inheritdoc/>
         protected override SchedulableData<T> ProcessInternal(SchedulableData<T> input)
         {
-            if (!input.IsSuccess)
-            {
-                return new SchedulableData<T>(input, default);
-            }
             if (isRequiredReset)
             {
-                while (buffer.TryDequeue(out _)) { }
+                buffer = new LinkedList<T>();
+                isRequiredReset = false;
             }
-
-            DateTime start = DateTime.Now;
-            var count = buffer.Count < 8 ? buffer.Count + 1 : 8;
-            var data = new T[count];
-            if (buffer.Count < bufferSize)
+            T removed = default;
+            T add;
+            bool isRemoved = false;
+            if (!input.IsSuccess || input.IsSignal)
             {
-                buffer.Enqueue(input.Data);
-                buffer.CopyTo(data, 0);
+                lock (buffer)
+                {
+                    if (buffer.Count == 0)
+                    {
+                        if (input.IsSuccess)
+                        {
+                            return new SchedulableData<T>(input, default, false, errorMessage: "まだデータはありません。");
+                        }
+                        else
+                        {
+                            return new SchedulableData<T>(input, default);
+                        }
+                    }
+                    add = buffer.Last.Value;
+                }
             }
             else
             {
-                if (ValidateData(input.Data))
-                {
-                    buffer.Enqueue(input.Data);
-                    while (!buffer.TryDequeue(out _)) { }
-                }
-                buffer.CopyTo(data, 0);
+                add = input.Data;
             }
-            T output = Average(data);
+
+            T[] data;
+            if (buffer.Count < bufferSize)
+            {
+                lock (buffer)
+                {
+                    buffer.AddLast(add);
+                    data = buffer.ToArray();
+                }
+            }
+            else
+            {
+                if (ValidateData(add))
+                {
+                    isRemoved = true;
+                    lock (buffer)
+                    {
+                        removed = buffer.First.Value;
+                        buffer.RemoveFirst();
+                        buffer.AddLast(add);
+                        data = buffer.ToArray();
+                    }
+                }
+                else
+                {
+                    lock (buffer)
+                    {
+                        data = buffer.ToArray();
+                    }
+                }
+            }
+
+            if (buffer.Count == 1)
+            {
+                lastOutput = input.Data;
+                return new SchedulableData<T>(input, input.Data, enfoce: true);
+            }
+            T output = Average(data, removed, isRemoved);
             lastOutput = output;
-            return new SchedulableData<T>(input, output);
+            return new SchedulableData<T>(input, output, enfoce: true);
         }
 
         /// <summary>
@@ -74,10 +126,12 @@ namespace kumaS.Tracker.Core
         protected abstract bool ValidateData(T input);
 
         /// <summary>
-        /// バッファにあるデータを平均するものを書く。
+        /// バッファにあるデータを平均するものを書く。データは必ず2つ以上ある。
         /// </summary>
-        /// <param name="datas">バッファにあるデータ。</param>
+        /// <param name="datas">バッファにあるデータ。新しいデータは後ろに、古いデータは前にある。</param>
+        /// <param name="removed">取り除かれるデータ。</param>
+        /// <param name="isRemoved">取り除かれるものはあるか。</param>
         /// <returns>平均のデータ。</returns>
-        protected abstract T Average(T[] datas);
+        protected abstract T Average(T[] datas, T removed, bool isRemoved);
     }
 }

@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -35,7 +36,7 @@ namespace kumaS.Tracker.Dlib
         private readonly string L_Eye_Ratio = nameof(L_Eye_Ratio);
         private readonly string R_Eye_Ratio = nameof(R_Eye_Ratio);
 
-        protected override void InitInternal(int thread)
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             mirror = sourceIsMirror != wantMirror;
             isAvailable.Value = true;
@@ -45,7 +46,7 @@ namespace kumaS.Tracker.Dlib
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess && isDebugRatio)
+            if (data.IsSuccess && isDebugRatio && !data.IsSignal)
             {
                 message[L_Eye_Ratio] = data.Data.Left.ToString();
                 message[R_Eye_Ratio] = data.Data.Right.ToString();
@@ -55,7 +56,7 @@ namespace kumaS.Tracker.Dlib
 
         protected override SchedulableData<EyeRatio> ProcessInternal(SchedulableData<Dlib68Landmarks> input)
         {
-            if (!input.IsSuccess)
+            if (!input.IsSuccess || input.IsSignal)
             {
                 return new SchedulableData<EyeRatio>(input, default);
             }
@@ -70,5 +71,7 @@ namespace kumaS.Tracker.Dlib
             var ret = new EyeRatio((float)left, (float)right);
             return new SchedulableData<EyeRatio>(input, ret);
         }
+
+        public override void Dispose(){ }
     }
 }

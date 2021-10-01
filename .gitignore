@@ -69,3 +69,6 @@ crashlytics-build.properties
 /[Aa]ssets/rootPackages.xml.meta
 [Aa]ssets/Debug data.meta
 [Aa]ssets/Debug data
+[Aa]ssets/shape_predictor_68_face_landmarks.dat
+[Aa]ssets/shape_predictor_68_face_landmarks.dat.meta
+UserSettings/

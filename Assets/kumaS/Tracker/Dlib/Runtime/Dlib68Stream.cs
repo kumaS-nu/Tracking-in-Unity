@@ -1,4 +1,6 @@
-﻿using DlibDotNet;
+﻿using Cysharp.Threading.Tasks;
+
+using DlibDotNet;
 
 using kumaS.Tracker.Core;
 
@@ -6,6 +8,7 @@ using OpenCvSharp;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -38,19 +41,21 @@ namespace kumaS.Tracker.Dlib
 
         private ShapePredictor[] predictor;
         private Rectangle box = default;
-        private readonly object boxLock = default;
+        private readonly object boxLock = new object();
 
         private readonly string Image_Width = nameof(Image_Width);
         private readonly string Image_Height = nameof(Image_Height);
         private string[] Point_X = default;
         private string[] Point_Y = default;
 
-        protected override void InitInternal(int thread)
+        protected override async void InitInternal(int thread, CancellationToken token)
         {
             predictor = new ShapePredictor[thread];
+            List<UniTask> tasks = new List<UniTask>();
             for (var i = 0; i < thread; i++)
             {
-                predictor[i] = ShapePredictor.Deserialize(filePath);
+                var t = i;
+                tasks.Add(UniTask.RunOnThreadPool(() => Load(t)));
             }
             var key = new List<string>
             {
@@ -71,14 +76,20 @@ namespace kumaS.Tracker.Dlib
             Point_Y = py.ToArray();
             debugKey = key.ToArray();
 
+            await UniTask.WhenAll(tasks);
             isAvailable.Value = true;
+        }
+
+        private void Load(int thread)
+        {
+            predictor[thread] = ShapePredictor.Deserialize(filePath);
         }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<Dlib68Landmarks> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
@@ -96,19 +107,23 @@ namespace kumaS.Tracker.Dlib
 
         protected override SchedulableData<Dlib68Landmarks> ProcessInternal(SchedulableData<BoundaryBox> input)
         {
+            if (!input.IsSuccess || input.IsSignal)
+            {
+                return new SchedulableData<Dlib68Landmarks>(input, default);
+            }
+
             try
             {
-                if (!input.IsSuccess)
-                {
-                    return new SchedulableData<Dlib68Landmarks>(input, default);
-                }
-
                 Rectangle rect = default;
                 if (input.Data.Box == default)
                 {
                     if (input.Data.Box == default)
                     {
-                        return new SchedulableData<Dlib68Landmarks>(input, default, false, "BoundaryBoxがまだ来ていません。");
+                        if (input.Data.OriginalImage.IsEnabledDispose)
+                        {
+                            input.Data.OriginalImage.Dispose();
+                        }
+                        return new SchedulableData<Dlib68Landmarks>(input, default, false, true, errorMessage: "BoundaryBoxがまだ来ていません。");
                     }
                     lock (boxLock)
                     {
@@ -128,8 +143,7 @@ namespace kumaS.Tracker.Dlib
                 {
                     try
                     {
-                        Mat origin = input.Data.OriginalImage;
-                        using (Array2D<BgrPixel> image = DlibDotNet.Dlib.LoadImageData<BgrPixel>(origin.Data, (uint)origin.Height, (uint)origin.Width, (uint)(origin.Width * origin.ElemSize())))
+                        using (Array2D<BgrPixel> image = DlibDotNet.Dlib.LoadImageData<BgrPixel>(input.Data.OriginalImage.Data, (uint)input.Data.ImageSize.y, (uint)input.Data.ImageSize.x, (uint)input.Data.ImageSize.x))
                         {
                             var points = new DlibDotNet.Point[68];
                             using (FullObjectDetection shapes = predictor[thread].Detect(image, rect))
@@ -155,14 +169,26 @@ namespace kumaS.Tracker.Dlib
                 }
                 else
                 {
-                    return new SchedulableData<Dlib68Landmarks>(input, default, false, "スレッドを確保できませんでした。");
+                    if (input.Data.OriginalImage.IsEnabledDispose)
+                    {
+                        input.Data.OriginalImage.Dispose();
+                    }
+                    return new SchedulableData<Dlib68Landmarks>(input, default, false, true, errorMessage: "スレッドを確保できませんでした。");
                 }
             }
             finally
             {
-                if (ResourceManager.isRelease(typeof(Mat), Id))
+                ResourceManager.DisposeIfRelease(input.Data.OriginalImage, Id);
+            }
+        }
+
+        public override void Dispose()
+        {
+            foreach (ShapePredictor p in predictor)
+            {
+                if (p.IsEnableDispose)
                 {
-                    input.Data.OriginalImage.Dispose();
+                    p.Dispose();
                 }
             }
         }

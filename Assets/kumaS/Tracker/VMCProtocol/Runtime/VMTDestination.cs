@@ -3,6 +3,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 
 using UniRx;
 
@@ -44,22 +45,6 @@ namespace kumaS.Tracker.VMCProtocol
 
         private readonly List<Vector3> trackerPos = new List<Vector3>();
         private readonly List<Quaternion> trackerRot = new List<Quaternion>();
-
-        private void Awake()
-        {
-            while (trackerPos.Count < trackerLabel.Count)
-            {
-                trackerPos.Add(Vector3.zero);
-                trackerRot.Add(Quaternion.identity);
-            }
-            udp.StartClient(adress, 39540);
-            isAvailable.Value = true;
-        }
-
-        private void OnDisable()
-        {
-            udp.Stop();
-        }
 
         protected override void ProcessInternal(SchedulableData<PredictedModelData> input)
         {
@@ -109,6 +94,22 @@ namespace kumaS.Tracker.VMCProtocol
                     udp.Send(Util.GetBuffer(stream), (int)stream.Position);
                 }
             }
+        }
+
+        public override void Dispose()
+        {
+            udp.Stop();
+        }
+
+        public override void Init(int thread, CancellationToken token)
+        {
+            while (trackerPos.Count < trackerLabel.Count)
+            {
+                trackerPos.Add(Vector3.zero);
+                trackerRot.Add(Quaternion.identity);
+            }
+            udp.StartClient(adress, 39540);
+            isAvailable.Value = true;
         }
     }
 }

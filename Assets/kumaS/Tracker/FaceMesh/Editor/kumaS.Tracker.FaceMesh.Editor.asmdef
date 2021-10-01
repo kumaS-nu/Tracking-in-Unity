@@ -1,5 +1,6 @@
 {
     "name": "kumaS.Tracker.FaceMesh.Editor",
+    "rootNamespace": "kumaS.Tracker.FaceMesh.Editor",
     "references": [
         "GUID:560b04d1a97f54a4e82edc0cbbb69285",
         "GUID:dc4784cda6b11a2418dbbce73c93b287",

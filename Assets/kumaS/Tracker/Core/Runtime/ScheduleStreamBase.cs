@@ -76,7 +76,8 @@ namespace kumaS.Tracker.Core
         /// 初期化。
         /// </summary>
         /// <param name="thread">用意するスレッド数。</param>
-        public void Init(int thread)
+        /// <param name="token">停止しようとしたかの通知。</param>
+        public void Init(int thread, CancellationToken token)
         {
             isThreadAvailable = new bool[thread];
             for (var i = 0; i < thread; i++)
@@ -84,14 +85,15 @@ namespace kumaS.Tracker.Core
                 isThreadAvailable[i] = true;
             }
 
-            InitInternal(thread);
+            InitInternal(thread, token);
         }
 
         /// <summary>
         /// 派生クラスではここに初期化処理を書く。初期化が終わったら利用可能にするのを忘れずに。
         /// </summary>
         /// <param name="thread">用意するスレッド数。</param>
-        protected abstract void InitInternal(int thread);
+        /// <param name="token">停止しようとしたかの通知。</param>
+        protected abstract void InitInternal(int thread, CancellationToken token);
 
         /// <summary>
         /// 処理をするプロセス。
@@ -174,5 +176,10 @@ namespace kumaS.Tracker.Core
         /// <param name="data">この処理の後のデータ。</param>
         /// <returns>デバッグで表示するデータ。</returns>
         protected abstract IDebugMessage DebugLogInternal(SchedulableData<TOutput> data);
+
+        /// <summary>
+        /// 派生クラスではここにストリーム破棄時の処理を書く．
+        /// </summary>
+        public abstract void Dispose();
     }
 }

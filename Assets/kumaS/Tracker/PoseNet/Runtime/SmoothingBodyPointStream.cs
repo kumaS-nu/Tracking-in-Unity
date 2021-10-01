@@ -1,6 +1,7 @@
 ﻿using kumaS.Tracker.Core;
 
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -85,7 +86,8 @@ namespace kumaS.Tracker.PoseNet
         private readonly float[] rotationRangeInternal = new float[15];
         private readonly float[] rotationZRangeNegative = new float[15];
 
-        private void Awake()
+        /// <inheritdoc/>
+        protected override void InitInternal2(int thread, CancellationToken token)
         {
             var dkey = new List<string>();
             var px = new List<string>();
@@ -134,34 +136,14 @@ namespace kumaS.Tracker.PoseNet
             isAvailable.Value = true;
         }
 
-        protected override BodyPoints Average(BodyPoints[] datas)
+        /// <inheritdoc/>
+        protected override BodyPoints Average(BodyPoints[] datas, BodyPoints removed, bool isRemoved)
         {
             var position = new Vector3[14];
-            var logLotation = new Vector3[15];
-            var average = new Quaternion[15];
-            var inverse = new Quaternion[15];
 
             for (var i = 0; i < position.Length; i++)
             {
                 position[i] = Vector3.zero;
-            }
-            for (var i = 0; i < logLotation.Length; i++)
-            {
-                logLotation[i] = Vector3.zero;
-            }
-
-            if (lastOutput == default)
-            {
-                average = datas[0].Rotation;
-            }
-            else
-            {
-                average = lastOutput.Rotation;
-            }
-
-            for (var i = 0; i < average.Length; i++)
-            {
-                inverse[i] = Quaternion.Inverse(average[i]);
             }
 
             foreach (BodyPoints data in datas)
@@ -170,12 +152,6 @@ namespace kumaS.Tracker.PoseNet
                 {
                     position[i] += data.Position[i];
                 }
-
-                for (var i = 0; i < logLotation.Length; i++)
-                {
-                    logLotation[i] += (inverse[i] * data.Rotation[i]).ToLogQuaternion();
-                }
-
             }
 
             for (var i = 0; i < position.Length; i++)
@@ -184,15 +160,23 @@ namespace kumaS.Tracker.PoseNet
             }
 
             var rot = new Quaternion[15];
-            for (var i = 0; i < logLotation.Length; i++)
+            for(var i = 0; i < rot.Length; i++)
             {
-                logLotation[i] /= datas.Length;
-                rot[i] = average[i] * logLotation[i].ToQuaternion();
+                rot[i] = datas[0].Rotation[i];
+            }
+            
+            for (var i = 1; i < datas.Length; i++)
+            {
+                for(var j = 0; j < rot.Length; j++)
+                {
+                    rot[j] = QuaternionInterpolation.Zslerp(rot[j], datas[i].Rotation[j], 1.0f / (i + 1));
+                }
             }
 
             return new BodyPoints(position, rot);
         }
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<BodyPoints> data)
         {
             var message = new Dictionary<string, string>();
@@ -226,6 +210,7 @@ namespace kumaS.Tracker.PoseNet
         private readonly Quaternion knee = Quaternion.Euler(90, 180, 0);
         private readonly Quaternion head = Quaternion.Inverse(Quaternion.Euler(-90, 0, 180));
 
+        /// <inheritdoc/>
         protected override bool ValidateData(BodyPoints input)
         {
             if (input.Position[0].x < xMin || input.Position[0].x > xMax)
@@ -330,6 +315,12 @@ namespace kumaS.Tracker.PoseNet
             }
 
             return true;
+        }
+
+        /// <inheritdoc/>
+        public override void Dispose()
+        {
+            throw new System.NotImplementedException();
         }
     }
 }

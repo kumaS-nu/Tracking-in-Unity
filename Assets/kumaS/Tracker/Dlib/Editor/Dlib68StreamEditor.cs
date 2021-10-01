@@ -136,10 +136,6 @@ namespace kumaS.Tracker.Dlib.Editor
                 property[nameof(Dlib68Stream.filePath)].stringValue = filePath;
                 property[nameof(Dlib68Stream.pathType)].intValue = pathType;
             }
-            EditorGUILayout.Space();
-            EditorGUILayout.Space();
-
-            EditorGUILayout.LabelField("Predict setting", EditorStyles.boldLabel);
 
             serializedObject.ApplyModifiedProperties();
         }

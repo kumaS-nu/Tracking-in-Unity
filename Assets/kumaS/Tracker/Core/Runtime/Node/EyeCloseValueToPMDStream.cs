@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -23,13 +24,13 @@ namespace kumaS.Tracker.Core
         private readonly string Blink_L = nameof(Blink_L);
         private readonly string Blink_R = nameof(Blink_R);
 
-        protected override void InitInternal(int thread) { }
+        protected override void InitInternal(int thread, CancellationToken token) { }
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<PredictedModelData> data)
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess && isDebugValue)
+            if (data.IsSuccess && isDebugValue && !data.IsSignal)
             {
                 data.Data.ToDebugParameter(message, Blink_L, Blink_L);
                 data.Data.ToDebugParameter(message, Blink_R, Blink_R);
@@ -39,7 +40,7 @@ namespace kumaS.Tracker.Core
 
         protected override SchedulableData<PredictedModelData> ProcessInternal(SchedulableData<EyeCloseValue> input)
         {
-            if (!input.IsSuccess)
+            if (!input.IsSuccess || input.IsSignal)
             {
                 return new SchedulableData<PredictedModelData>(input, default);
             }
@@ -52,5 +53,7 @@ namespace kumaS.Tracker.Core
             var ret = new PredictedModelData(parameter: paramater);
             return new SchedulableData<PredictedModelData>(input, ret);
         }
+
+        public override void Dispose(){ }
     }
 }

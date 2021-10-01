@@ -4,6 +4,7 @@ using OpenCvSharp;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -55,7 +56,7 @@ namespace kumaS.Tracker.Dlib
         private readonly string R_Eye_Y = nameof(R_Eye_Y);
         private readonly string R_Eye_Z = nameof(R_Eye_Z);
 
-        protected override void InitInternal(int thread)
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             mirror = sourceIsMirror != wantMirror;
             isAvailable.Value = true;
@@ -65,7 +66,7 @@ namespace kumaS.Tracker.Dlib
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess && isDebugRotation)
+            if (data.IsSuccess && isDebugRotation && !data.IsSignal)
             {
                 data.Data.ToDebugRoattion(message, L_Eye_X, L_Eye_Y, L_Eye_Z, R_Eye_X, R_Eye_Y, R_Eye_Z);
             }
@@ -74,18 +75,24 @@ namespace kumaS.Tracker.Dlib
 
         protected override SchedulableData<EyeRotation> ProcessInternal(SchedulableData<Dlib68Landmarks> input)
         {
+            if (!input.IsSuccess || input.IsSignal)
+            {
+                return new SchedulableData<EyeRotation>(input, default);
+            }
+
             try
             {
-                if (!input.IsSuccess)
-                {
-                    return new SchedulableData<EyeRotation>(input, default);
-                }
                 Vector2 predictedLeftCenter = PredictCenter(input.Data.OriginalImage, GetRect(input.Data.Landmarks, 42, 48));
                 Vector2 predictedRightCenter = PredictCenter(input.Data.OriginalImage, GetRect(input.Data.Landmarks, 36, 42));
                 Vector2 leftPoint = GetNormalizedPoint(input.Data.Landmarks[42].ToVector2(), input.Data.Landmarks[45].ToVector2(), predictedLeftCenter);
                 Vector2 rightPoint = GetNormalizedPoint(input.Data.Landmarks[36].ToVector2(), input.Data.Landmarks[39].ToVector2(), predictedRightCenter);
                 leftPoint -= leftCenter;
                 rightPoint -= rightCenter;
+                if (float.IsNaN(leftPoint.x) || float.IsInfinity(leftPoint.x) || float.IsNaN(leftPoint.y) || float.IsInfinity(leftPoint.y) 
+                    || float.IsNaN(rightPoint.x) || float.IsInfinity(rightPoint.x) || float.IsNaN(rightPoint.y) || float.IsInfinity(rightPoint.y))
+                {
+                    return new SchedulableData<EyeRotation>(input, default, false, errorMessage: "目線の取得に失敗しました。");
+                }
                 var left = Quaternion.Euler(-leftPoint.y * rotateScale, -leftPoint.x * rotateScale, 0);
                 var right = Quaternion.Euler(-rightPoint.y * rotateScale, -rightPoint.x * rotateScale, 0);
 
@@ -104,10 +111,7 @@ namespace kumaS.Tracker.Dlib
             }
             finally
             {
-                if (ResourceManager.isRelease(typeof(Mat), Id))
-                {
-                    input.Data.OriginalImage.Dispose();
-                }
+                ResourceManager.DisposeIfRelease(input.Data.OriginalImage, Id);
             }
         }
 
@@ -190,5 +194,7 @@ namespace kumaS.Tracker.Dlib
             ret = ret * c.magnitude / xAxies.magnitude;
             return ret;
         }
+
+        public override void Dispose() { }
     }
 }

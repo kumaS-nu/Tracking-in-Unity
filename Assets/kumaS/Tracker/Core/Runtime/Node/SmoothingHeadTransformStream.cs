@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 
 using UnityEngine;
 
@@ -42,34 +43,26 @@ namespace kumaS.Tracker.Core
         private float moveRangeInternal = 1;
         private float rotateSpeedLimitInternal = 180;
 
-        private void Awake()
-        {
-            moveSpeedLimitInternal = moveSpeedLimit * bufferSize * moveSpeedLimit * bufferSize;
-            moveRangeInternal = moveRange * moveRange;
-            rotateSpeedLimitInternal = rotateSpeedLimit * bufferSize;
-        }
-
-        protected override HeadTransform Average(HeadTransform[] datas)
+        /// <inheritdoc/>
+        protected override HeadTransform Average(HeadTransform[] datas, HeadTransform removed, bool isRemoved)
         {
             Vector3 position = Vector3.zero;
-            Vector3 logLotation = Vector3.zero;
-            Quaternion average = datas[0].Rotation;
-            if (lastOutput != default)
-            {
-                average = lastOutput.Rotation;
-            }
-            var inverse = Quaternion.Inverse(average);
-
             foreach (HeadTransform data in datas)
             {
                 position += data.Position;
-                logLotation += (inverse * data.Rotation).ToLogQuaternion();
             }
             position /= datas.Length;
-            logLotation /= datas.Length;
-            return new HeadTransform(position, average * logLotation.ToQuaternion());
+
+            Quaternion rotation = datas[0].Rotation;
+            for(var i = 1; i < datas.Length; i++)
+            {
+                rotation = QuaternionInterpolation.Yslerp(rotation, datas[i].Rotation, 1.0f / (i + 1));
+            }
+
+            return new HeadTransform(position, rotation);
         }
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<HeadTransform> data)
         {
             var message = new Dictionary<string, string>();
@@ -85,13 +78,14 @@ namespace kumaS.Tracker.Core
             return new DebugMessage(data, message);
         }
 
+        /// <inheritdoc/>
         protected override bool ValidateData(HeadTransform input)
         {
             if (input.Position.sqrMagnitude > moveRangeInternal)
             {
                 return false;
             }
-            if (input.Position.sqrMagnitude > moveSpeedLimitInternal)
+            if ((input.Position - lastOutput.Position).sqrMagnitude > moveSpeedLimitInternal)
             {
                 return false;
             }
@@ -105,6 +99,17 @@ namespace kumaS.Tracker.Core
             }
 
             return true;
+        }
+
+        /// <inheritdoc/>
+        public override void Dispose(){ }
+
+        /// <inheritdoc/>
+        protected override void InitInternal2(int thread, CancellationToken token)
+        {
+            moveSpeedLimitInternal = moveSpeedLimit * bufferSize * moveSpeedLimit * bufferSize;
+            moveRangeInternal = moveRange * moveRange;
+            rotateSpeedLimitInternal = rotateSpeedLimit * bufferSize;
         }
     }
 }

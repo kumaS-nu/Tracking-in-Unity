@@ -4,6 +4,7 @@ using kumaS.Tracker.Core;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -33,7 +34,7 @@ namespace kumaS.Tracker.Live2D
 
         private readonly List<string> mouthKey = new List<string> { "A", "I", "U", "E", "O" };
 
-        protected override void InitInternal(int thread)
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             debugKey = new string[PredictedLive2DData.DefaultParameterList.Length + 1];
             debugKey[0] = SchedulableData<object>.Elapsed_Time;
@@ -182,5 +183,6 @@ namespace kumaS.Tracker.Live2D
             }
         }
 
+        public override void Dispose(){ }
     }
 }

@@ -34,7 +34,7 @@ namespace kumaS.Tracker.Core
         /// ストリームを構築。
         /// </summary>
         /// <returns>全てのノード。</returns>
-        internal List<StreamNode> Build(GameObject scheduler)
+        internal List<StreamNode> Build(CompositeDisposable disposables, Action<Exception> onError)
         {
             List<StreamNode> starts = BuildNetwork();
             var allNodes = new List<StreamNode>();
@@ -49,7 +49,7 @@ namespace kumaS.Tracker.Core
                 start.StartId.Add(allNodes.IndexOf(start));
                 foreach (StreamNode next in start.Next)
                 {
-                    BuildStream(next, allNodes, scheduler);
+                    BuildStream(next, allNodes, disposables, onError);
                 }
             }
 
@@ -83,7 +83,7 @@ namespace kumaS.Tracker.Core
                 streamNodes.Last().Add(node);
             }
 
-            foreach (object destination in destinations)
+            foreach (IScheduleDestination destination in destinations)
             {
                 destinationNodes.Add(new StreamNode(destination));
             }
@@ -133,7 +133,7 @@ namespace kumaS.Tracker.Core
         /// ストリームを構築する。
         /// </summary>
         /// <param name="node">対象のノード。</param>
-        internal void BuildStream(StreamNode node, List<StreamNode> allNodes, GameObject scheduler)
+        internal void BuildStream(StreamNode node, List<StreamNode> allNodes, CompositeDisposable disposables, Action<Exception> onError)
         {
             allNodes.Add(node);
             if (!node.Previous.All(previous => previous.TryGetMainStream(out IObservable<object> _)))
@@ -162,9 +162,8 @@ namespace kumaS.Tracker.Core
             if (node.Next.Count == 0)
             {
                 stream = stream.Share();
-                stream.ObserveOnMainThread().Subscribe(((IScheduleDestination)node.Schedulable).Process).AddTo(scheduler);
-                node.ErrorStream = stream;
-                node.TimeStream = stream.Where(data => ((ISchedulableMetadata)data).IsSuccess).Select(ElapsedTimeLog);
+                stream.ObserveOnMainThread().Subscribe(((IScheduleDestination)node.Schedulable).Process, onError).AddTo(disposables);
+                node.FinishStream = stream;
                 return;
             }
 
@@ -174,19 +173,8 @@ namespace kumaS.Tracker.Core
 
             foreach (StreamNode next in node.Next)
             {
-                BuildStream(next, allNodes, scheduler);
+                BuildStream(next, allNodes, disposables, onError);
             }
-        }
-
-        /// <summary>
-        /// 経過時間に変換する。
-        /// </summary>
-        /// <param name="d">データ。</param>
-        /// <returns>経過時間。</returns>
-        private ElapsedTimeLog ElapsedTimeLog(object d)
-        {
-            var data = (ISchedulableMetadata)d;
-            return new ElapsedTimeLog(data.SourceId, data.StartTime, new TimeSpan(data.ElapsedTimes.Sum(time => time.Ticks)));
         }
     }
 }

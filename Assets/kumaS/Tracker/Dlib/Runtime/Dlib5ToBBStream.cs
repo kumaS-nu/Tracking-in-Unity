@@ -4,6 +4,7 @@ using OpenCvSharp;
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -32,7 +33,7 @@ namespace kumaS.Tracker.Dlib
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess && data.Data != null)
+            if (data.IsSuccess && data.Data != null && !data.IsSignal)
             {
                 message[Image_Width] = data.Data.ImageSize.x.ToString();
                 message[Image_Height] = data.Data.ImageSize.y.ToString();
@@ -47,17 +48,18 @@ namespace kumaS.Tracker.Dlib
             return new DebugMessage(data, message);
         }
 
-        protected override void InitInternal(int thread) { }
+        protected override void InitInternal(int thread, CancellationToken token) { }
 
         protected override SchedulableData<BoundaryBox> ProcessInternal(SchedulableData<Dlib5Landmarks> input)
         {
+
+            if (!input.IsSuccess || input.IsSignal)
+            {
+                return new SchedulableData<BoundaryBox>(input, default);
+            }
+
             try
             {
-                if (!input.IsSuccess)
-                {
-                    return new SchedulableData<BoundaryBox>(input, default);
-                }
-
                 if (input.Data.Landmarks == default)
                 {
                     return new SchedulableData<BoundaryBox>(input, new BoundaryBox(input.Data.OriginalImage, default));
@@ -70,11 +72,10 @@ namespace kumaS.Tracker.Dlib
             }
             finally
             {
-                if (ResourceManager.isRelease(typeof(Mat), Id))
-                {
-                    input.Data.OriginalImage.Dispose();
-                }
+                ResourceManager.DisposeIfRelease(input.Data.OriginalImage, Id);
             }
         }
+
+        public override void Dispose(){ }
     }
 }

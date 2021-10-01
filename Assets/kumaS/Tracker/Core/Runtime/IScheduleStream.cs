@@ -24,12 +24,6 @@ namespace kumaS.Tracker.Core
         Type OutputType { get; }
 
         /// <summary>
-        /// 初期化。
-        /// </summary>
-        /// <param name="thread">用意するスレッド数。</param>
-        void Init(int thread);
-
-        /// <summary>
         /// ストリームをつなげる。（Hot変換はスケジューラー側。）
         /// </summary>
         /// <param name="input">このストリームにつなげる。</param>

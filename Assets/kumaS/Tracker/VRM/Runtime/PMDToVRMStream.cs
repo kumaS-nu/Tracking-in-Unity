@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 using UniRx;
 
@@ -98,7 +99,7 @@ namespace kumaS.Tracker.VRM
         {
             var message = new Dictionary<string, string>();
             data.ToDebugElapsedTime(message);
-            if (data.IsSuccess)
+            if (data.IsSuccess && !data.IsSignal)
             {
                 if (isDebugPosition)
                 {
@@ -135,7 +136,7 @@ namespace kumaS.Tracker.VRM
             return new DebugMessage(data, message);
         }
 
-        protected override void InitInternal(int thread)
+        protected override void InitInternal(int thread, CancellationToken token)
         {
             for (var i = PMDPosition.Count - 1; i >= 0; i--)
             {
@@ -231,7 +232,7 @@ namespace kumaS.Tracker.VRM
 
         protected override SchedulableData<PredictedVRMData> ProcessInternal(SchedulableData<PredictedModelData> input)
         {
-            if (!input.IsSuccess)
+            if (!input.IsSuccess || input.IsSignal)
             {
                 return new SchedulableData<PredictedVRMData>(input, default);
             }
@@ -295,5 +296,7 @@ namespace kumaS.Tracker.VRM
             var ret = new PredictedVRMData(pos, rot, parameter, opt);
             return new SchedulableData<PredictedVRMData>(input, ret);
         }
+
+        public override void Dispose(){ }
     }
 }

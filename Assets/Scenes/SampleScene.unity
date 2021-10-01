@@ -43,7 +43,7 @@ RenderSettings:
 --- !u!157 &3
 LightmapSettings:
   m_ObjectHideFlags: 0
-  serializedVersion: 11
+  serializedVersion: 12
   m_GIWorkflowMode: 1
   m_GISettings:
     serializedVersion: 2
@@ -98,7 +98,8 @@ LightmapSettings:
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
   m_LightingDataAsset: {fileID: 0}
-  m_UseShadowmask: 1
+  m_LightingSettings: {fileID: 4890085278179872738, guid: fbddea5bff4b6114c9b029dbf8df0e7d,
+    type: 2}
 --- !u!196 &4
 NavMeshSettings:
   serializedVersion: 2
@@ -118,6 +119,8 @@ NavMeshSettings:
     manualTileSize: 0
     tileSize: 256
     accuratePlacement: 0
+    maxJobWorkers: 0
+    preserveTilesOutsideBounds: 0
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
@@ -132,18 +135,28 @@ GameObject:
   - component: {fileID: 360894268}
   - component: {fileID: 360894271}
   - component: {fileID: 360894270}
-  - component: {fileID: 360894269}
   - component: {fileID: 360894273}
-  - component: {fileID: 360894274}
   - component: {fileID: 360894272}
+  - component: {fileID: 360894284}
+  - component: {fileID: 360894283}
+  - component: {fileID: 360894282}
+  - component: {fileID: 360894281}
+  - component: {fileID: 360894280}
   - component: {fileID: 360894267}
+  - component: {fileID: 360894279}
+  - component: {fileID: 360894278}
+  - component: {fileID: 360894277}
+  - component: {fileID: 360894276}
+  - component: {fileID: 360894275}
+  - component: {fileID: 360894274}
+  - component: {fileID: 360894269}
   m_Layer: 0
   m_Name: GameObject
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &360894267
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -156,27 +169,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80758d2e95b8c0d4e882e84a066b2475, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sourceFold: 1
+  sourceFold: 0
   streamFold: 1
-  streamFolds: 01
+  streamFolds: 0000000000
   fpsFold: 1
-  destinationFold: 1
+  destinationFold: 0
   sources:
   - {fileID: 360894271}
   streams:
-  - {fileID: 360894270}
-  - {fileID: 360894269}
-  - {fileID: 360894274}
+  - {fileID: 360894283}
+  - {fileID: 360894282}
+  - {fileID: 360894281}
+  - {fileID: 360894276}
+  - {fileID: 360894275}
+  - {fileID: 360894280}
   - {fileID: 360894273}
+  - {fileID: 360894274}
+  - {fileID: 360894269}
+  - {fileID: 360894278}
+  - {fileID: 360894277}
+  - {fileID: 360894277}
+  - {fileID: 360894279}
+  - {fileID: 360894284}
   destinations:
   - {fileID: 360894272}
-  streamUnitStarts: 00000000
-  streamInputs: ffffffff
-  streamOutputs: 00000000
+  streamUnitStarts: 000000000200000005000000080000000d000000
+  streamInputs: ffffffff01000000010000000100000000000000
+  streamOutputs: 00000000050000000500000005000000ffffffff
   fps: 3c000000
-  thread: 8
+  thread: 16
   isDebug:
     value: 0
+  isShowError:
+    value: 1
   isWriteFile:
     value: 0
   isDebugFPS:
@@ -188,7 +213,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 360894266}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
@@ -204,15 +229,14 @@ MonoBehaviour:
   m_GameObject: {fileID: 360894266}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3dfd50ae576bf0840831ea0e1db733ce, type: 3}
+  m_Script: {fileID: 11500000, guid: 09ef9c9d304144143b4e7f336bda747e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   isDebug:
-    value: 1
-  filePath: D:\Other\haarcascade_frontalface_default.xml
-  pathType: 1
-  isDebugBox: 1
-  interval: 0
+    value: 0
+  isDebugRatio: 1
+  sourceIsMirror: 0
+  wantMirror: 1
 --- !u!114 &360894270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -226,8 +250,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isDebug:
-    value: 1
-  ratio: 1
+    value: 0
+  ratio: 0.5
   interpolation: 1
 --- !u!114 &360894271
 MonoBehaviour:
@@ -242,10 +266,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isDebug:
-    value: 1
+    value: 0
   useUnity: 0
   isFile: 0
+  sendSameImage: 0
   cameraIndex: 0
+  request_fps: 30
+  request_width: 1280
+  request_height: 720
   filePath: 
   pathType: 1
   isDebugSize: 1
@@ -277,11 +305,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isDebug:
-    value: 1
-  bufferSize: 8
+    value: 0
+  bufferSize: 16
   resetKey: 114
-  moveSpeedLimit: 0.05
-  moveRange: 0.5
+  moveSpeedLimit: 0.1
+  moveRange: 1
   rotateSpeedLimit: 15
   rotateRange: 90
   isDebugHead: 1
@@ -294,17 +322,238 @@ MonoBehaviour:
   m_GameObject: {fileID: 360894266}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 72117034c67801143829815052198519, type: 3}
+  m_Script: {fileID: 11500000, guid: 415ce05125daff44c85e272e228e535e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  isDebugHead: 0
+  center: {fileID: 478407022}
+--- !u!114 &360894275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 39f9538dca3e53a48a471884197def4e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  isDebugRotation: 1
+  forward: {fileID: 478407022}
+--- !u!114 &360894276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90308f50c5f9d4442ab4ee40fd16402b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  bufferSize: 16
+  resetKey: 114
+  isDebugRotation: 1
+  rotateSpeedLimit: 5
+  rotateRangeLXMin: -10
+  rotateRangeLXMax: 10
+  rotateRangeLYMin: -20
+  rotateRangeLYMax: 20
+  rotateRangeRXMin: -10
+  rotateRangeRXMax: 10
+  rotateRangeRYMin: -20
+  rotateRangeRYMax: 20
+--- !u!114 &360894277
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da5fbbb351d6a224b94eede2ba8c96bf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  bufferSize: 16
+  resetKey: 114
+  isDebugValue: 1
+--- !u!114 &360894278
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d18a7019ad48a5042a7c567db2910a26, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  ratioMax: 0.3
+  ratioMin: 0.2
+  isDebugValue: 1
+--- !u!114 &360894279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d86206862cc542342a391985b84a2f34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  isDebugValue: 1
+--- !u!114 &360894280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6d68f76b40ed01043ad121fc1b95a7c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   isDebug:
     value: 1
-  moveScale: 0.1
-  isEnableDepth: 1
-  depthCenter: 0.3
+  moveScale: {x: 1, y: 1, z: 1}
+  focalLength: 2371
   sourceIsMirror: 0
   wantMirror: 1
+  realPoint:
+  - {x: 0, y: -0.03, z: -0.11}
+  - {x: 0, y: 0.06, z: -0.08}
+  - {x: 0.048, y: -0.07, z: -0.066}
+  - {x: -0.048, y: -0.07, z: -0.066}
+  - {x: 0.03, y: 0.007, z: -0.088}
+  - {x: -0.03, y: 0.007, z: -0.088}
+  - {x: 0.015, y: -0.07, z: -0.08}
+  - {x: -0.015, y: -0.07, z: -0.08}
   isDebugHead: 1
+  type: 0
+  fov: 44.085308
+  width: 1920
+  fold: 1
+  centerPos: {x: 0, y: -0.1, z: -1.32}
+  centerRot: {x: 0, y: 0, z: 0, w: 1}
+  centerlizeKey: 99
+--- !u!114 &360894281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e395588e0344824da5aaa68ad840a66, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  leftCenter: {x: 0.5, y: 0.5}
+  rightCenter: {x: 0.5, y: 0.5}
+  isDebugRotation: 1
+  rotateScale: 1
+  sourceIsMirror: 0
+  wantMirror: 1
+--- !u!114 &360894282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df1458f01f425474182bfb0fab71f1a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  filePath: D:/Program/Unity/Tracking-in-Unity/Assets\shape_predictor_68_face_landmarks.dat
+  pathType: 2
+  isDebugPoint: 1
+--- !u!114 &360894283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dcede43cb1666354c9edd5ac7dd5ef02, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  isDebugBox: 1
+  interval: 0
+--- !u!114 &360894284
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360894266}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0b8fd5f12a9e66d41ab1a071e8836f48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isDebug:
+    value: 0
+  fold0: 0
+  PMDPosition:
+  - Head
+  VRMPosition:
+  - Head
+  fold1: 0
+  PMDRotation:
+  - Head
+  - L_Eye
+  - R_Eye
+  VRMRotation:
+  - Head
+  - L_Eye
+  - R_Eye
+  RotationOffset:
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: -90, z: -90}
+  fold2: 0
+  PMDParameter:
+  - Blink_L
+  - Blink_R
+  VRMParameter:
+  - Blink_L
+  - Blink_R
+  fold3: 0
+  PMDOption: []
+  VRMOption: []
+  isDebugPosition: 1
+  isDebugRotation: 1
+  isDebugParameter: 1
+  isDebugOption: 1
 --- !u!1 &478407021
 GameObject:
   m_ObjectHideFlags: 0
@@ -411,6 +660,7 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &705507995
@@ -468,7 +718,6 @@ GameObject:
   - component: {fileID: 963194228}
   - component: {fileID: 963194227}
   - component: {fileID: 963194226}
-  - component: {fileID: 963194229}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -541,15 +790,3 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &963194229
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 963194225}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 960302d04988f314ba34ffbbf3f2ab85, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
