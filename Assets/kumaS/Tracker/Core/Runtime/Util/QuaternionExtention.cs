@@ -53,22 +53,22 @@ namespace kumaS.Tracker.Core
 
         private static bool Approximately(Quaternion a, Quaternion b)
         {
-            if(Mathf.Abs(a.x - b.x) > 0.02f)
+            if(Mathf.Abs(a.x - b.x) > 0.01f)
             {
                 return false;
             }
 
-            if (Mathf.Abs(a.y - b.y) > 0.02f)
+            if (Mathf.Abs(a.y - b.y) > 0.01f)
             {
                 return false;
             }
 
-            if (Mathf.Abs(a.z - b.z) > 0.02f)
+            if (Mathf.Abs(a.z - b.z) > 0.01f)
             {
                 return false;
             }
 
-            if (Mathf.Abs(a.w - b.w) > 0.02f)
+            if (Mathf.Abs(a.w - b.w) > 0.01f)
             {
                 return false;
             }
@@ -90,6 +90,9 @@ namespace kumaS.Tracker.Core
                 return a;
             }
             var posRotate = GetPosRotate(a * Vector3.right, b * Vector3.right, t);
+            if (float.IsNaN(posRotate.rotate.x)) {
+                return a;
+            }
             var xRotate = Quaternion.Inverse(posRotate.rotate * a) * b;
             if (xRotate.w < 0)
             {
@@ -115,6 +118,10 @@ namespace kumaS.Tracker.Core
                 return a;
             }
             var posRotate = GetPosRotate(a * Vector3.up, b * Vector3.up, t);
+            if (float.IsNaN(posRotate.rotate.x))
+            {
+                return a;
+            }
             var yRotate = Quaternion.Inverse(posRotate.rotate * a) * b;
             if (yRotate.w < 0)
             {
@@ -141,6 +148,10 @@ namespace kumaS.Tracker.Core
                 return a;
             }
             var posRotate = GetPosRotate(a * Vector3.forward, b * Vector3.forward, t);
+            if (float.IsNaN(posRotate.rotate.x))
+            {
+                return a;
+            }
             var zRotate = Quaternion.Inverse(posRotate.rotate * a) * b;
             if (zRotate.w < 0)
             {
@@ -168,6 +179,10 @@ namespace kumaS.Tracker.Core
             }
             axis.Normalize();
             var posRotate = GetPosRotate(a * axis, b * axis, t);
+            if (float.IsNaN(posRotate.rotate.x))
+            {
+                return a;
+            }
             var axisRotate = Quaternion.Inverse(posRotate.rotate * a) * b;
             if(axisRotate.w < 0)
             {

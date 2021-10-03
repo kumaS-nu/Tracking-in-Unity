@@ -69,7 +69,7 @@ namespace kumaS.Tracker.Core
         /// <returns>目の閉じ具合。</returns>
         private float Convert(float ratio)
         {
-            var value = (ratio - ratioMin) * coeff;
+            var value = 1 - (ratio - ratioMin) * coeff;
             if (value > 1)
             {
                 return 1;

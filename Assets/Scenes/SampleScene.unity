@@ -171,7 +171,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sourceFold: 0
   streamFold: 1
-  streamFolds: 0000000000
+  streamFolds: 0000000100
   fpsFold: 1
   destinationFold: 0
   sources:
@@ -188,24 +188,23 @@ MonoBehaviour:
   - {fileID: 360894269}
   - {fileID: 360894278}
   - {fileID: 360894277}
-  - {fileID: 360894277}
   - {fileID: 360894279}
   - {fileID: 360894284}
   destinations:
   - {fileID: 360894272}
-  streamUnitStarts: 000000000200000005000000080000000d000000
+  streamUnitStarts: 000000000200000005000000080000000c000000
   streamInputs: ffffffff01000000010000000100000000000000
   streamOutputs: 00000000050000000500000005000000ffffffff
   fps: 3c000000
   thread: 16
   isDebug:
-    value: 0
+    value: 1
   isShowError:
     value: 1
   isWriteFile:
     value: 0
   isDebugFPS:
-    value: 0
+    value: 1
 --- !u!4 &360894268
 Transform:
   m_ObjectHideFlags: 0
@@ -291,6 +290,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   transforms:
   - {fileID: 728660817}
+  - {fileID: 572903463}
+  - {fileID: 458921045}
   proxy: {fileID: 0}
 --- !u!114 &360894273
 MonoBehaviour:
@@ -362,15 +363,15 @@ MonoBehaviour:
   bufferSize: 16
   resetKey: 114
   isDebugRotation: 1
-  rotateSpeedLimit: 5
-  rotateRangeLXMin: -10
-  rotateRangeLXMax: 10
-  rotateRangeLYMin: -20
-  rotateRangeLYMax: 20
-  rotateRangeRXMin: -10
-  rotateRangeRXMax: 10
-  rotateRangeRYMin: -20
-  rotateRangeRYMax: 20
+  rotateSpeedLimit: 10
+  rotateRangeLXMin: -30
+  rotateRangeLXMax: 30
+  rotateRangeLYMin: -45
+  rotateRangeLYMax: 45
+  rotateRangeRXMin: -30
+  rotateRangeRXMax: 30
+  rotateRangeRYMin: -45
+  rotateRangeRYMax: 45
 --- !u!114 &360894277
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -433,7 +434,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   isDebug:
-    value: 1
+    value: 0
   moveScale: {x: 1, y: 1, z: 1}
   focalLength: 2371
   sourceIsMirror: 0
@@ -469,10 +470,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isDebug:
     value: 0
-  leftCenter: {x: 0.5, y: 0.5}
-  rightCenter: {x: 0.5, y: 0.5}
+  leftCenter: {x: 0.5, y: 0}
+  rightCenter: {x: 0.5, y: 0}
   isDebugRotation: 1
-  rotateScale: 1
+  rotateScale: 90
   sourceIsMirror: 0
   wantMirror: 1
 --- !u!114 &360894282
@@ -527,19 +528,61 @@ MonoBehaviour:
   - Head
   VRMPosition:
   - Head
-  fold1: 0
-  PMDRotation:
+  fold1: 1
+  PMDRotationLabel:
+  - Root
   - Head
+  - L_Shoulder
+  - R_Shoulder
+  - L_Elbow
+  - R_Elbow
+  - L_Wrist
+  - R_Wrist
+  - L_Hip
+  - R_Hip
+  - L_Knee
+  - R_Knee
+  - L_Ankle
+  - R_Ankle
+  - Neck
   - L_Eye
   - R_Eye
-  VRMRotation:
+  VRMRotationLabel:
+  - Root
   - Head
+  - L_Shoulder
+  - R_Shoulder
+  - L_Elbow
+  - R_Elbow
+  - L_Wrist
+  - R_Wrist
+  - L_Hip
+  - R_Hip
+  - L_Knee
+  - R_Knee
+  - L_Ankle
+  - R_Ankle
+  - Neck
   - L_Eye
   - R_Eye
   RotationOffset:
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: 0, z: 0}
   - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: -90, z: -90}
+  - {x: 0, y: 0, z: 0}
+  - {x: 0, y: 0, z: 0}
   fold2: 0
   PMDParameter:
   - Blink_L
@@ -554,6 +597,36 @@ MonoBehaviour:
   isDebugRotation: 1
   isDebugParameter: 1
   isDebugOption: 1
+--- !u!1 &458921044
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 458921045}
+  m_Layer: 0
+  m_Name: R_Eye
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &458921045
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 458921044}
+  m_LocalRotation: {x: 0, y: 0, z: 0.008726535, w: 0.9999619}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 6
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &478407021
 GameObject:
   m_ObjectHideFlags: 0
@@ -583,6 +656,36 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &572903462
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 572903463}
+  m_Layer: 0
+  m_Name: L_Eye
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &572903463
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 572903462}
+  m_LocalRotation: {x: 0, y: 0, z: 0.008726535, w: 0.9999619}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &705507993
 GameObject:

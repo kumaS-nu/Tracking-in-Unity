@@ -19,8 +19,8 @@ namespace kumaS.Tracker.VRM.Editor
             property[nameof(PMDToVRMStream.PMDPosition)] = serializedObject.FindProperty(nameof(PMDToVRMStream.PMDPosition));
             property[nameof(PMDToVRMStream.VRMPosition)] = serializedObject.FindProperty(nameof(PMDToVRMStream.VRMPosition));
             property[nameof(PMDToVRMStream.fold1)] = serializedObject.FindProperty(nameof(PMDToVRMStream.fold1));
-            property[nameof(PMDToVRMStream.PMDRotation)] = serializedObject.FindProperty(nameof(PMDToVRMStream.PMDRotation));
-            property[nameof(PMDToVRMStream.VRMRotation)] = serializedObject.FindProperty(nameof(PMDToVRMStream.VRMRotation));
+            property[nameof(PMDToVRMStream.PMDRotationLabel)] = serializedObject.FindProperty(nameof(PMDToVRMStream.PMDRotationLabel));
+            property[nameof(PMDToVRMStream.VRMRotationLabel)] = serializedObject.FindProperty(nameof(PMDToVRMStream.VRMRotationLabel));
             property[nameof(PMDToVRMStream.RotationOffset)] = serializedObject.FindProperty(nameof(PMDToVRMStream.RotationOffset));
             property[nameof(PMDToVRMStream.fold2)] = serializedObject.FindProperty(nameof(PMDToVRMStream.fold2));
             property[nameof(PMDToVRMStream.PMDParameter)] = serializedObject.FindProperty(nameof(PMDToVRMStream.PMDParameter));
@@ -101,10 +101,10 @@ namespace kumaS.Tracker.VRM.Editor
                 {
                     using (new EditorGUI.IndentLevelScope())
                     {
-                        var size = EditorGUILayout.DelayedIntField("Size", property[nameof(PMDToVRMStream.PMDRotation)].arraySize);
+                        var size = EditorGUILayout.DelayedIntField("Size", property[nameof(PMDToVRMStream.PMDRotationLabel)].arraySize);
                         EditorGUILayout.Space();
-                        property[nameof(PMDToVRMStream.PMDRotation)].arraySize = size;
-                        property[nameof(PMDToVRMStream.VRMRotation)].arraySize = size;
+                        property[nameof(PMDToVRMStream.PMDRotationLabel)].arraySize = size;
+                        property[nameof(PMDToVRMStream.VRMRotationLabel)].arraySize = size;
                         property[nameof(PMDToVRMStream.RotationOffset)].arraySize = size;
                         using (new EditorGUILayout.HorizontalScope())
                         {
@@ -112,20 +112,20 @@ namespace kumaS.Tracker.VRM.Editor
                             EditorGUILayout.LabelField("VRM label");
                         }
                         EditorGUILayout.Space();
-                        for (var i = 0; i < property[nameof(PMDToVRMStream.PMDRotation)].arraySize; i++)
+                        for (var i = 0; i < property[nameof(PMDToVRMStream.PMDRotationLabel)].arraySize; i++)
                         {
                             using (new EditorGUILayout.HorizontalScope())
                             {
-                                property[nameof(PMDToVRMStream.PMDRotation)].GetArrayElementAtIndex(i).stringValue = EditorGUILayout.TextField(property[nameof(PMDToVRMStream.PMDRotation)].GetArrayElementAtIndex(i).stringValue);
-                                property[nameof(PMDToVRMStream.VRMRotation)].GetArrayElementAtIndex(i).stringValue = EditorGUILayout.TextField(property[nameof(PMDToVRMStream.VRMRotation)].GetArrayElementAtIndex(i).stringValue);
+                                property[nameof(PMDToVRMStream.PMDRotationLabel)].GetArrayElementAtIndex(i).stringValue = EditorGUILayout.TextField(property[nameof(PMDToVRMStream.PMDRotationLabel)].GetArrayElementAtIndex(i).stringValue);
+                                property[nameof(PMDToVRMStream.VRMRotationLabel)].GetArrayElementAtIndex(i).stringValue = EditorGUILayout.TextField(property[nameof(PMDToVRMStream.VRMRotationLabel)].GetArrayElementAtIndex(i).stringValue);
                             }
                         }
                         EditorGUILayout.Space();
                         EditorGUILayout.LabelField("Offset", EditorStyles.boldLabel);
-                        for (var i = 0; i < property[nameof(PMDToVRMStream.PMDRotation)].arraySize; i++)
+                        for (var i = 0; i < property[nameof(PMDToVRMStream.PMDRotationLabel)].arraySize; i++)
                         {
                             property[nameof(PMDToVRMStream.RotationOffset)].GetArrayElementAtIndex(i).vector3Value =
-                                EditorGUILayout.Vector3Field(property[nameof(PMDToVRMStream.VRMRotation)].GetArrayElementAtIndex(i).stringValue, property[nameof(PMDToVRMStream.RotationOffset)].GetArrayElementAtIndex(i).vector3Value);
+                                EditorGUILayout.Vector3Field(property[nameof(PMDToVRMStream.VRMRotationLabel)].GetArrayElementAtIndex(i).stringValue, property[nameof(PMDToVRMStream.RotationOffset)].GetArrayElementAtIndex(i).vector3Value);
                         }
                     }
                 }

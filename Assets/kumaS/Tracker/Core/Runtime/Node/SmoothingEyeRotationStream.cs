@@ -87,21 +87,21 @@ namespace kumaS.Tracker.Core
         protected override bool ValidateData(EyeRotation input)
         {
             Vector3 left = input.Left.eulerAngles;
-            if (left.x > rotateRangeLXMax && left.x < 360 - rotateRangeLXMin)
+            if (left.x > rotateRangeLXMax && left.x < 360 + rotateRangeLXMin)
             {
                 return false;
             }
-            if (left.y < rotateRangeLYMax && left.y < 360 - rotateRangeLYMin)
+            if (left.y > rotateRangeLYMax && left.y < 360 + rotateRangeLYMin)
             {
                 return false;
             }
 
             Vector3 right = input.Right.eulerAngles;
-            if (right.x > rotateRangeRXMax && right.x < 360 - rotateRangeRXMin)
+            if (right.x > rotateRangeRXMax && right.x < 360 + rotateRangeRXMin)
             {
                 return false;
             }
-            if (right.y > rotateRangeRYMax && right.y < 360 - rotateRangeRYMin)
+            if (right.y > rotateRangeRYMax && right.y < 360 + rotateRangeRYMin)
             {
                 return false;
             }

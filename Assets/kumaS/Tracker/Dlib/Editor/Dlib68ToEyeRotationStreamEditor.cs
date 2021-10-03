@@ -56,7 +56,7 @@ namespace kumaS.Tracker.Dlib.Editor
             {
                 EditorGUILayout.PropertyField(property[nameof(Dlib68ToEyeRotationStream.sourceIsMirror)], new GUIContent("Source is mirror"));
                 EditorGUILayout.PropertyField(property[nameof(Dlib68ToEyeRotationStream.wantMirror)], new GUIContent("Is mirror"));
-                property[nameof(Dlib68ToEyeRotationStream.rotateScale)].floatValue = EditorGUILayout.Slider("Rotate scale", property[nameof(Dlib68ToEyeRotationStream.rotateScale)].floatValue, 0, 1);
+                property[nameof(Dlib68ToEyeRotationStream.rotateScale)].floatValue = EditorGUILayout.Slider("Rotate scale", property[nameof(Dlib68ToEyeRotationStream.rotateScale)].floatValue, 0, 90);
                 EditorGUILayout.PropertyField(property[nameof(Dlib68ToEyeRotationStream.leftCenter)], new GUIContent("Left center"));
                 EditorGUILayout.PropertyField(property[nameof(Dlib68ToEyeRotationStream.rightCenter)], new GUIContent("Right center"));
             }

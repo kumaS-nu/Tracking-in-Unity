@@ -70,8 +70,8 @@ namespace kumaS.Tracker.Core
             await UniTask.SwitchToMainThread();
             var rot = new Dictionary<string, Quaternion>
             {
-                [L_Eye] = input.Data.Left * forward.rotation,
-                [R_Eye] = input.Data.Right * forward.rotation
+                [L_Eye] = forward.rotation * input.Data.Left,
+                [R_Eye] = forward.rotation * input.Data.Right
             };
             var ret = new PredictedModelData(rotation: rot);
             return new SchedulableData<PredictedModelData>(input, ret);

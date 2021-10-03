@@ -28,10 +28,10 @@ namespace kumaS.Tracker.VRM
         internal bool fold1 = false;
 
         [SerializeField]
-        internal List<string> PMDRotation = new List<string>(PredictedModelData.DefaultRotationList);
+        internal List<string> PMDRotationLabel = new List<string>(PredictedModelData.DefaultRotationList);
 
         [SerializeField]
-        internal List<string> VRMRotation = new List<string>(PredictedModelData.DefaultRotationList);
+        internal List<string> VRMRotationLabel = new List<string>(PredictedModelData.DefaultRotationList);
 
         [SerializeField]
         internal List<Vector3> RotationOffset = new List<Vector3>(new Vector3[] {
@@ -111,9 +111,9 @@ namespace kumaS.Tracker.VRM
 
                 if (isDebugRotation)
                 {
-                    for (var i = 0; i < VRMRotation.Count; i++)
+                    for (var i = 0; i < VRMRotationLabel.Count; i++)
                     {
-                        data.Data.ToDebugRotation(message, VRMRotation[i], rotationX[i], rotationY[i], rotationZ[i]);
+                        data.Data.ToDebugRotation(message, VRMRotationLabel[i], rotationX[i], rotationY[i], rotationZ[i]);
                     }
                 }
 
@@ -147,12 +147,12 @@ namespace kumaS.Tracker.VRM
                 }
             }
 
-            for (var i = PMDRotation.Count - 1; i >= 0; i--)
+            for (var i = PMDRotationLabel.Count - 1; i >= 0; i--)
             {
-                if (PMDRotation[i] == "" || VRMRotation[i] == "")
+                if (PMDRotationLabel[i] == "" || VRMRotationLabel[i] == "")
                 {
-                    PMDRotation.RemoveAt(i);
-                    VRMRotation.RemoveAt(i);
+                    PMDRotationLabel.RemoveAt(i);
+                    VRMRotationLabel.RemoveAt(i);
                     RotationOffset.RemoveAt(i);
                 }
             }
@@ -207,7 +207,7 @@ namespace kumaS.Tracker.VRM
             var rx = new List<string>();
             var ry = new List<string>();
             var rz = new List<string>();
-            foreach (var r in VRMRotation)
+            foreach (var r in VRMRotationLabel)
             {
                 var x = r + "_X";
                 dk.Add(x);
@@ -257,10 +257,10 @@ namespace kumaS.Tracker.VRM
                 rot = new Dictionary<string, Quaternion>();
                 foreach (KeyValuePair<string, Quaternion> r in input.Data.Rotation)
                 {
-                    var index = PMDRotation.IndexOf(r.Key);
+                    var index = PMDRotationLabel.IndexOf(r.Key);
                     if (index >= 0)
                     {
-                        rot[VRMRotation[index]] = r.Value * rotationOffsetInverse[index];
+                        rot[VRMRotationLabel[index]] = r.Value * rotationOffsetInverse[index];
                     }
                 }
             }

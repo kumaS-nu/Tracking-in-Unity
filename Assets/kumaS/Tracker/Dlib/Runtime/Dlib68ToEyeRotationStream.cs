@@ -18,10 +18,10 @@ namespace kumaS.Tracker.Dlib
     public sealed class Dlib68ToEyeRotationStream : ScheduleStreamBase<Dlib68Landmarks, EyeRotation>
     {
         [SerializeField]
-        internal Vector2 leftCenter = new Vector2(0.5f, 0.5f);
+        internal Vector2 leftCenter = new Vector2(0.5f, 0);
 
         [SerializeField]
-        internal Vector2 rightCenter = new Vector2(0.5f, 0.5f);
+        internal Vector2 rightCenter = new Vector2(0.5f, 0);
 
         [SerializeField]
         internal bool isDebugRotation = true;
@@ -93,8 +93,8 @@ namespace kumaS.Tracker.Dlib
                 {
                     return new SchedulableData<EyeRotation>(input, default, false, errorMessage: "目線の取得に失敗しました。");
                 }
-                var left = Quaternion.Euler(-leftPoint.y * rotateScale, -leftPoint.x * rotateScale, 0);
-                var right = Quaternion.Euler(-rightPoint.y * rotateScale, -rightPoint.x * rotateScale, 0);
+                var left = Quaternion.Euler(leftPoint.y * rotateScale, -leftPoint.x * rotateScale, 0);
+                var right = Quaternion.Euler(rightPoint.y * rotateScale, -rightPoint.x * rotateScale, 0);
 
                 if (mirror)
                 {
@@ -104,7 +104,7 @@ namespace kumaS.Tracker.Dlib
                     left.y *= -1;
                     left.z *= -1;
                     right.y *= -1;
-                    right.y *= -1;
+                    right.z *= -1;
                 }
                 var ret = new EyeRotation(left, right);
                 return new SchedulableData<EyeRotation>(input, ret);
