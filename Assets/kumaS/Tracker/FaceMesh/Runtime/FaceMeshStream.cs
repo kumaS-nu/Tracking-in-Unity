@@ -66,8 +66,8 @@ namespace kumaS.Tracker.FaceMesh
         private Normalizer[] normalizers;
         private AffineTransform[] affineTransform;
         private IWorker[] workers;
-        private byte[][] data;
-        private float[][] affine;
+        private Mat[] data;
+        private Mat[] affine;
         private BoundaryBox box = default;
         private readonly object boxLock = new object();
 
@@ -104,22 +104,21 @@ namespace kumaS.Tracker.FaceMesh
             normalizers = new Normalizer[thread];
             affineTransform = new AffineTransform[thread];
             workers = new IWorker[thread];
-            data = new byte[thread][];
-            affine = new float[thread][];
+            data = new Mat[thread];
+            affine = new Mat[thread];
             Model model = ModelLoader.Load(filePath);
             for (var i = 0; i < thread; i++)
             {
                 normalizers[i] = new Normalizer
                 {
-                    Input = new NativeArray<byte>(UNIT * UNIT * 3, Allocator.Persistent),
+                    Length = UNIT * UNIT,
                     Output = new NativeArray<float>(UNIT * UNIT * 3, Allocator.Persistent)
                 };
                 affineTransform[i].Input = new NativeArray<float>(1404, Allocator.Persistent);
-                affineTransform[i].Affine = new NativeArray<float>(6, Allocator.Persistent);
                 affineTransform[i].Output = new NativeArray<float>(1404, Allocator.Persistent);
                 workers[i] = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
-                data[i] = new byte[UNIT * UNIT * 3];
-                affine[i] = new float[9];
+                affine[i] = new Mat();
+                data[i] = new Mat();
             }
             MakeDebugKey();
             isAvailable.Value = true;
@@ -201,15 +200,19 @@ namespace kumaS.Tracker.FaceMesh
                         points[1] = new Point2f(centerX + len * cos, centerY + len * sin);
                         points[2] = new Point2f(centerX - len * cos, centerY - len * sin);
                         using (Mat rotateMatrix = Cv2.GetAffineTransform(points, POINTS))
-                        using (Mat inverseMatrix = Cv2.GetAffineTransform(POINTS, points))
                         {
-                            using (var rotated = new Mat())
+                            if (data[thread].IsEnabledDispose)
                             {
-                                Cv2.WarpAffine(bb.OriginalImage, rotated, rotateMatrix, SIZE, interpolation);
-                                Marshal.Copy(rotated.Data, data[thread], 0, 110592);
-                                Marshal.Copy(inverseMatrix.Data, affine[thread], 0, 6);
-                                return ProcessInternalAsync(input, thread).ToObservable().Wait();
+                                data[thread].Dispose();
                             }
+                            if (affine[thread].IsEnabledDispose)
+                            {
+                                affine[thread].Dispose();
+                            }
+                            data[thread] = new Mat();
+                            Cv2.WarpAffine(bb.OriginalImage, data[thread], rotateMatrix, SIZE, interpolation);
+                            affine[thread] = Cv2.GetAffineTransform(POINTS, points);
+                            return ProcessInternalAsync(input, thread).ToObservable().Wait();
                         }
                     }
                     finally
@@ -231,7 +234,7 @@ namespace kumaS.Tracker.FaceMesh
         private async UniTask<SchedulableData<FaceMeshLandmarks>> ProcessInternalAsync(SchedulableData<BoundaryBox> input, int thread)
         {
             await UniTask.SwitchToMainThread();
-            normalizers[thread].Input.CopyFrom(data[thread]);
+            normalizers[thread].Input = data[thread].Data;
             normalizers[thread].Execute();
             var tensor = new Tensor(1, UNIT, UNIT, 3, normalizers[thread].Output.ToArray());
             workers[thread].Execute(tensor);
@@ -244,7 +247,7 @@ namespace kumaS.Tracker.FaceMesh
             }
 
             affineTransform[thread].Input.CopyFrom(coords.ToReadOnlyArray());
-            affineTransform[thread].Affine.CopyFrom(affine[thread]);
+            affineTransform[thread].Affine = affine[thread].Data;
             affineTransform[thread].Execute();
 
             var transformedCoords = affineTransform[thread].Output.ToArray();
@@ -291,15 +294,23 @@ namespace kumaS.Tracker.FaceMesh
         {
             foreach (Normalizer normalizer in normalizers)
             {
-                normalizer.Input.Dispose();
                 normalizer.Output.Dispose();
+            }
+
+            foreach (var d in data)
+            {
+                d.Dispose();
             }
 
             foreach (AffineTransform transformer in affineTransform)
             {
                 transformer.Input.Dispose();
-                transformer.Affine.Dispose();
                 transformer.Output.Dispose();
+            }
+
+            foreach (var a in affine)
+            {
+                a.Dispose();
             }
 
             foreach (IWorker worker in workers)

@@ -21,9 +21,9 @@ namespace kumaS.Tracker.Live2D
 
         public override string ProcessName { get; set; } = "Apply to Live2D";
         public override Type[] UseType { get; } = new Type[0];
-        public override IReadOnlyReactiveProperty<bool> IsAvailable { get; }
+        public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
-        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
+        private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(true);
 
         protected override void ProcessInternal(SchedulableData<PredictedLive2DData> input)
         {

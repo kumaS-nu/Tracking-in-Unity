@@ -1,11 +1,13 @@
 using Cysharp.Threading.Tasks;
 
 using OpenCvSharp;
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
 
 using Unity.Collections;
+using Unity.Jobs;
 
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -42,7 +44,7 @@ namespace kumaS.Tracker.Core
                 cashed = new Mat();
             }
             unityVideo = obj.GetComponent<VideoPlayer>();
-            if(unityVideo == null)
+            if (unityVideo == null)
             {
                 unityVideo = obj.AddComponent<VideoPlayer>();
             }
@@ -68,19 +70,19 @@ namespace kumaS.Tracker.Core
                 unityVideo.Play();
             }
 
-            if(unityVideo.frameCount <= (ulong)unityVideo.frame)
+            if (unityVideo.frameCount <= (ulong)unityVideo.frame)
             {
                 throw new IndexOutOfRangeException("“®‰æ‚ÍI—¹‚µ‚Ü‚µ‚½B");
             }
 
-            if(frame != unityVideo.frame)
+            if (frame != unityVideo.frame)
             {
                 frame = unityVideo.frame;
                 var mat = await GetMat();
                 await UniTask.SwitchToThreadPool();
                 if (sendSame)
                 {
-                    if(cashed != null && cashed.IsEnabledDispose)
+                    if (cashed != null && cashed.IsEnabledDispose)
                     {
                         cashed.Dispose();
                     }
@@ -108,7 +110,15 @@ namespace kumaS.Tracker.Core
             NativeArray<Color32> data = request.GetData<Color32>();
 
             await UniTask.SwitchToThreadPool();
-            Mat ret = MatConverter.Color32ToMat(data.ToArray(), height, width);
+            var ret = new Mat(height, width, MatType.CV_8UC3);
+            var job = new Color32ToMat()
+            {
+                Input = data,
+                mat = ret.Data,
+                height_ = height,
+                width_ = width
+            };
+            await job.Schedule();
             return ret;
         }
     }

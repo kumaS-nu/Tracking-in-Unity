@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 using Unity.Collections;
+using Unity.Jobs;
 
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -42,16 +43,22 @@ namespace kumaS.Tracker.Core
             }
             Texture.allowThreadedTextureCreation = true;
             unityWebcam = new WebCamTexture(WebCamTexture.devices[cameraIndex].name);
-            unityWebcam.requestedFPS = requestFps;
-            unityWebcam.requestedHeight = requestHeight;
-            unityWebcam.requestedWidth = requestWidth;
+            if (requestFps > 0)
+            {
+                unityWebcam.requestedFPS = requestFps;
+            }
+            if (requestHeight > 0 && requestWidth > 0)
+            {
+                unityWebcam.requestedHeight = requestHeight;
+                unityWebcam.requestedWidth = requestWidth;
+            }
             unityWebcam.Play();
         }
 
         public void Dispose()
         {
             unityWebcam.Stop();
-            if(cashed != null && cashed.IsEnabledDispose)
+            if (cashed != null && cashed.IsEnabledDispose)
             {
                 cashed.Dispose();
             }
@@ -92,10 +99,18 @@ namespace kumaS.Tracker.Core
         {
             var request = AsyncGPUReadback.Request(unityWebcam);
             await request;
-            NativeArray<Color32> data = request.GetData<Color32>();
+            var data = request.GetData<Color32>();
 
             await UniTask.SwitchToThreadPool();
-            Mat ret = MatConverter.Color32ToMat(data.ToArray(), height, width);
+            Mat ret = new Mat(height, width, MatType.CV_8UC3);
+            var job = new Color32ToMat()
+            {
+                Input = data,
+                mat = ret.Data,
+                height_ = height,
+                width_ = width
+            };
+            await job.Schedule();
             return ret;
         }
     }

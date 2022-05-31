@@ -23,8 +23,12 @@ namespace kumaS.Tracker.PoseNet.Editor
 
         private void OnEnable()
         {
-            property[nameof(PoseNetStream.filePath)] = serializedObject.FindProperty(nameof(PoseNetStream.filePath));
-            property[nameof(PoseNetStream.pathType)] = serializedObject.FindProperty(nameof(PoseNetStream.pathType));
+            property[nameof(PoseNetStream.modelFile)] = serializedObject.FindProperty(nameof(PoseNetStream.modelFile));
+            property[nameof(PoseNetStream.debugImage)] = serializedObject.FindProperty(nameof(PoseNetStream.debugImage));
+            property[nameof(PoseNetStream.interval)] = serializedObject.FindProperty(nameof(PoseNetStream.interval));
+            property[nameof(PoseNetStream.markColor)] = serializedObject.FindProperty(nameof(PoseNetStream.markColor));
+            property[nameof(PoseNetStream.markSize)] = serializedObject.FindProperty(nameof(PoseNetStream.markSize));
+            property[nameof(PoseNetStream.fontScale)] = serializedObject.FindProperty(nameof(PoseNetStream.fontScale));
             property[nameof(PoseNetStream.modelType)] = serializedObject.FindProperty(nameof(PoseNetStream.modelType));
             property[nameof(PoseNetStream.stride)] = serializedObject.FindProperty(nameof(PoseNetStream.stride));
             property[nameof(PoseNetStream.interpolation)] = serializedObject.FindProperty(nameof(PoseNetStream.interpolation));
@@ -33,6 +37,8 @@ namespace kumaS.Tracker.PoseNet.Editor
             property[nameof(PoseNetStream.minScore)] = serializedObject.FindProperty(nameof(PoseNetStream.minScore));
             property[nameof(PoseNetStream.isDebug)] = serializedObject.FindProperty(nameof(PoseNetStream.isDebug));
             property[nameof(PoseNetStream.isDebugLandmark)] = serializedObject.FindProperty(nameof(PoseNetStream.isDebugLandmark));
+            property[nameof(PoseNetStream.isDebugImage)] = serializedObject.FindProperty(nameof(PoseNetStream.isDebugImage));
+            property[nameof(PoseNetStream.isDebugIndex)] = serializedObject.FindProperty(nameof(PoseNetStream.isDebugIndex));
             if (interpolationLabel == null)
             {
                 interpolationLabel = new string[6];
@@ -91,6 +97,23 @@ namespace kumaS.Tracker.PoseNet.Editor
                     using (new EditorGUI.IndentLevelScope())
                     {
                         EditorGUILayout.PropertyField(property[nameof(PoseNetStream.isDebugLandmark)], new GUIContent("Landmarks"));
+                        EditorGUILayout.PropertyField(property[nameof(PoseNetStream.isDebugImage)], new GUIContent("by Image"));
+                        if (property[nameof(PoseNetStream.isDebugImage)].boolValue)
+                        {
+                            using (new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.PropertyField(property[nameof(PoseNetStream.debugImage)], new GUIContent("Image debugger"));
+                                EditorGUILayout.PropertyField(property[nameof(PoseNetStream.markColor)], new GUIContent("Mark color"));
+                                EditorGUILayout.PropertyField(property[nameof(PoseNetStream.markSize)], new GUIContent("Mark size"));
+                                EditorGUILayout.PropertyField(property[nameof(PoseNetStream.interval)], new GUIContent("Interval"));
+                                EditorGUILayout.PropertyField(property[nameof(PoseNetStream.isDebugIndex)], new GUIContent("with Index"));
+                                if (property[nameof(PoseNetStream.isDebugIndex)].boolValue)
+                                {
+                                    EditorGUILayout.PropertyField(property[nameof(PoseNetStream.fontScale)], new GUIContent("Font scale"));
+                                }
+
+                            }
+                        }
                     }
                 }
             }
@@ -100,19 +123,7 @@ namespace kumaS.Tracker.PoseNet.Editor
             EditorGUILayout.LabelField("Model setting", EditorStyles.boldLabel);
             using (new EditorGUI.IndentLevelScope())
             {
-                var filePath = property[nameof(PoseNetStream.filePath)].stringValue;
-                var pathType = property[nameof(PoseNetStream.pathType)].intValue;
-                filePath = PathUtil.Deserialize(filePath, pathType);
-                pathType = EditorGUILayout.IntPopup("Path type", pathType, pathTypeLabel, pathTypeIndex);
-                filePath = EditorGUILayout.TextField("File path", filePath);
-                filePath = PathUtil.Serialize(filePath, pathType, false);
-
-                if (filePath == "" || !File.Exists(filePath))
-                {
-                    EditorGUILayout.HelpBox("モデルファイルが見つかりませんでした。", MessageType.Error);
-                }
-                property[nameof(PoseNetStream.filePath)].stringValue = filePath;
-                property[nameof(PoseNetStream.pathType)].intValue = pathType;
+                EditorGUILayout.PropertyField(property[nameof(PoseNetStream.modelFile)], new GUIContent("Model file"));
 
                 property[nameof(PoseNetStream.modelType)].intValue = EditorGUILayout.IntPopup("Model type", property[nameof(PoseNetStream.modelType)].intValue, PoseNetStream.MODEL_TYPE, PoseNetStream.MODEL_TYPE_INDEX);
                 int[] stride = default;
@@ -145,7 +156,7 @@ namespace kumaS.Tracker.PoseNet.Editor
             EditorGUILayout.LabelField("Detect setting", EditorStyles.boldLabel);
             using (new EditorGUI.IndentLevelScope())
             {
-                property[nameof(PoseNetStream.minScore)].floatValue = EditorGUILayout.Slider("Threshold score", property[nameof(PoseNetStream.minScore)].floatValue, 0, 1);
+                property[nameof(PoseNetStream.minScore)].floatValue = EditorGUILayout.Slider("Threshold score", property[nameof(PoseNetStream.minScore)].floatValue, -1000, 0);
             }
 
             serializedObject.ApplyModifiedProperties();

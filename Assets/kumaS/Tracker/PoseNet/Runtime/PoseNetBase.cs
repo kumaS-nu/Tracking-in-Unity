@@ -14,44 +14,64 @@ namespace kumaS.Tracker.PoseNet
     internal abstract class PoseNetBase : IDisposable
     {
         protected IWorker worker;
-        protected byte[] data;
+        protected Mat data = new Mat();
         protected Size inputSize = new Size(257, 257);
         protected int outputStride;
         protected InterpolationFlags flag;
-        protected float[] heatmap = default;
-        protected float[] offsets = default;
         protected float minScore;
-        protected int quantHeight;
-        protected int quantWidth;
-        protected int quantAmount;
+
+        private Size beforeSize = default;
+        private bool isSameSize = true;
+        private bool isNoPad = true;
+        private Size resizedSize = default;
+        private float invScale = 1;
+        private int topPad = 0;
+        private int leftPad = 0;
+        private int bottomPad = 0;
+        private int rightPad = 0;
 
         internal async UniTask<PoseNetLandmarks> Execute(Mat input)
         {
+            var size = input.Size();
+            if (beforeSize != size)
+            {
+                SetScaleSetting(size);
+            }
             GetInputImage(input);
             await UniTask.SwitchToMainThread();
-            ExecuteInternal();
+            var (heatmap, offsets) = ExecuteInternal();
 
             var landmarks = new Vector2[17];
             float totalScore = 0;
-            for (var i = 0; i < 17; i++)
+            for (var c = 0; c < 17; c++)
             {
                 var max = float.MinValue;
-                var index = 0;
-                for (var j = 0; j < quantAmount; j++)
+                var index = Vector2Int.zero;
+
+                for (var h = 0; h < heatmap.height; h++)
                 {
-                    if (heatmap[17 * j + i] > max)
+                    for (var w = 0; w < heatmap.width; w++)
                     {
-                        index = j;
-                        max = heatmap[17 * j + i];
+                        if (heatmap[0, h, w, c] > max)
+                        {
+                            index = new Vector2Int(w, h);
+                            max = heatmap[0, h, w, c];
+                        }
                     }
                 }
 
-                Vector2 landmark = new Vector2(index % quantWidth, index / quantWidth) * outputStride;
-                landmark.y += offsets[34 * index + i];
-                landmark.x += offsets[34 * index + i + 17];
-                landmarks[i] = landmark;
-                totalScore += heatmap[17 * index + i];
+                Vector2 landmark = index * outputStride;
+                landmark.y += offsets[0, index.y, index.x, c];
+                landmark.x += offsets[0, index.y, index.x, c + 17];
+                landmark.y -= topPad;
+                landmark.x -= leftPad;
+                landmark *= invScale;
+                landmarks[c] = landmark;
+                totalScore += (Mathf.Atan(max / 2) + 1) / 2;
             }
+
+            offsets.Dispose();
+            heatmap.Dispose();
 
             if (totalScore < minScore)
             {
@@ -61,70 +81,107 @@ namespace kumaS.Tracker.PoseNet
             return new PoseNetLandmarks(input, landmarks);
         }
 
-        private void GetInputImage(Mat input)
+        private void SetScaleSetting(Size input)
         {
-            if (input.Size() == inputSize)
+            beforeSize = input;
+            if (input == inputSize)
             {
-                Marshal.Copy(input.Data, data, 0, data.Length);
+                isSameSize = true;
+                isNoPad = true;
+                resizedSize = input;
+                invScale = 1;
+                topPad = 0;
+                leftPad = 0;
+                bottomPad = 0;
+                rightPad = 0;
+                return;
+            }
+
+            isSameSize = false;
+
+            int width, height;
+            float scale;
+            if ((float)inputSize.Height / input.Height > (float)inputSize.Width / input.Width)
+            {
+                scale = (float)inputSize.Width / input.Width;
+                width = inputSize.Width;
+                height = (int)(input.Height * scale);
             }
             else
             {
-                int width;
-                int height;
-                if ((float)input.Width / input.Height > (float)inputSize.Width / inputSize.Height)
-                {
-                    var scale = (double)inputSize.Width / input.Width;
-                    width = inputSize.Width;
-                    height = (int)(input.Height * scale);
-                }
-                else
-                {
-                    var scale = (double)inputSize.Height / input.Height;
-                    width = (int)(input.Width * scale);
-                    height = inputSize.Height;
-                }
+                scale = (float)inputSize.Height / input.Height;
+                width = (int)(input.Width * scale);
+                height = inputSize.Height;
+            }
 
-                var resizedSize = new Size(width, height);
+            invScale = 1 / scale;
+            resizedSize = new Size(width, height);
 
-                if (resizedSize == inputSize)
-                {
-                    using (var resized = new Mat())
-                    {
-                        Cv2.Resize(input, resized, new Size(width, height), 0, 0, flag);
-                        Marshal.Copy(resized.Data, data, 0, data.Length);
-                    }
-                }
-                else if (resizedSize == input.Size())
-                {
-                    var heightMargin = inputSize.Height - height;
-                    var widthMargin = inputSize.Width - width;
-                    var topPad = heightMargin / 2;
-                    var leftPad = widthMargin / 2;
-                    using (var paded = new Mat())
-                    {
-                        Cv2.CopyMakeBorder(paded, input, topPad, heightMargin - topPad, leftPad, widthMargin - leftPad, BorderTypes.Constant, Scalar.Black);
-                        Marshal.Copy(paded.Data, data, 0, data.Length);
-                    }
-                }
-                else
-                {
-                    var heightMargin = inputSize.Height - height;
-                    var widthMargin = inputSize.Width - width;
-                    var topPad = heightMargin / 2;
-                    var leftPad = widthMargin / 2;
-                    using (var resized = new Mat())
-                    using (var paded = new Mat())
-                    {
-                        Cv2.Resize(input, resized, new Size(width, height), 0, 0, flag);
-                        Cv2.CopyMakeBorder(paded, resized, topPad, heightMargin - topPad, leftPad, widthMargin - leftPad, BorderTypes.Constant, Scalar.Black);
-                        Marshal.Copy(paded.Data, data, 0, data.Length);
-                    }
-                }
+            if (resizedSize == inputSize)
+            {
+                isNoPad = true;
+                topPad = 0;
+                leftPad = 0;
+                bottomPad = 0;
+                rightPad = 0;
+                return;
+            }
+
+            isNoPad = false;
+            var heightMargin = inputSize.Height - height;
+            var widthMargin = inputSize.Width - width;
+            topPad = heightMargin / 2;
+            leftPad = widthMargin / 2;
+            bottomPad = heightMargin - topPad;
+            rightPad = widthMargin - leftPad;
+        }
+
+        private void GetInputImage(Mat input)
+        {
+            if (data.IsEnabledDispose)
+            {
+                data.Dispose();
+            }
+
+            if (isSameSize)
+            {
+                data = input.Clone();
+                return;
+            }
+
+            if (isNoPad)
+            {
+                data = new Mat();
+                Cv2.Resize(input, data, resizedSize, 0, 0, flag);
+                return;
+            }
+
+            if (invScale == 1)
+            {
+                data = new Mat();
+                Cv2.CopyMakeBorder(input, data, topPad, bottomPad, leftPad, rightPad, BorderTypes.Constant, Scalar.Black);
+                return;
+            }
+
+            using (var resized = new Mat())
+            {
+                data = new Mat();
+                Cv2.Resize(input, resized, resizedSize, 0, 0, flag);
+                Cv2.CopyMakeBorder(resized, data, topPad, bottomPad, leftPad, rightPad, BorderTypes.Constant, Scalar.Black);
             }
         }
 
-        protected abstract void ExecuteInternal();
+        protected abstract (Tensor heatmap, Tensor offsets) ExecuteInternal();
 
-        public abstract void Dispose();
+        public void Dispose()
+        {
+            if (data.IsEnabledDispose)
+            {
+                data.Dispose();
+            }
+            DisposeInternal();
+        }
+
+        public abstract void DisposeInternal();
     }
 }

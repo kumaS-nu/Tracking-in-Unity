@@ -13,6 +13,7 @@ using UniRx;
 
 using Unity.Barracuda;
 using Unity.Collections;
+using Unity.Jobs;
 
 using UnityEngine;
 
@@ -63,7 +64,7 @@ namespace kumaS.Tracker.BlazeFace
         private const int strideBound = 128 * 128 / 8 / 8 * 2;
         private Normalizer[] normalizers;
         private IWorker[] workers;
-        private byte[][] data;
+        private Mat[] data;
         private float minScoreInternal = 0;
         private volatile int skipped = 0;
 
@@ -72,17 +73,17 @@ namespace kumaS.Tracker.BlazeFace
             minScoreInternal = -Mathf.Log(1 / minScore - 1);
             normalizers = new Normalizer[thread];
             workers = new IWorker[thread];
-            data = new byte[thread][];
+            data = new Mat[thread];
             Model model = ModelLoader.Load(filePath);
             for (var i = 0; i < thread; i++)
             {
                 normalizers[i] = new Normalizer
                 {
-                    Input = new NativeArray<byte>(128 * 128 * 3, Allocator.Persistent),
+                    Length = 128 * 128,
                     Output = new NativeArray<float>(128 * 128 * 3, Allocator.Persistent)
                 };
                 workers[i] = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
-                data[i] = new byte[128 * 128 * 3];
+                data[i] = new Mat();
             }
             MakeDebugKey();
             isAvailable.Value = true;
@@ -155,12 +156,13 @@ namespace kumaS.Tracker.BlazeFace
                     Interlocked.Exchange(ref skipped, 0);
                     try
                     {
-                        using (var resized = new Mat())
+                        if (data[thread].IsEnabledDispose)
                         {
-                            Cv2.Resize(input.Data, resized, new Size(128, 128), interpolation: interpolation);
-                            Marshal.Copy(resized.Data, data[thread], 0, 49152);
-                            return ProcessInternalAsync(input, thread).ToObservable().Wait();
+                            data[thread].Dispose();
                         }
+                        data[thread] = new Mat();
+                        Cv2.Resize(input.Data, data[thread], new Size(128, 128), interpolation: interpolation);
+                        return ProcessInternalAsync(input, thread).ToObservable().Wait();
                     }
                     finally
                     {
@@ -179,8 +181,8 @@ namespace kumaS.Tracker.BlazeFace
         private async UniTask<SchedulableData<BlazeFaceLandmarks>> ProcessInternalAsync(SchedulableData<Mat> input, int thread)
         {
             await UniTask.SwitchToMainThread();
-            normalizers[thread].Input.CopyFrom(data[thread]);
-            normalizers[thread].Execute();
+            normalizers[thread].Input = data[thread].Data;
+            await normalizers[thread].Schedule();
             var tensor = new Tensor(1, 128, 128, 3, normalizers[thread].Output.ToArray());
             workers[thread].Execute(tensor);
             Tensor output = workers[thread].PeekOutput();
@@ -234,8 +236,12 @@ namespace kumaS.Tracker.BlazeFace
         {
             foreach (Normalizer normalizer in normalizers)
             {
-                normalizer.Input.Dispose();
                 normalizer.Output.Dispose();
+            }
+
+            foreach (var d in data)
+            {
+                d.Dispose();
             }
 
             foreach (IWorker worker in workers)

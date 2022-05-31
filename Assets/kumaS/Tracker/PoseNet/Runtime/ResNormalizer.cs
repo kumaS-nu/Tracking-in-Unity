@@ -1,6 +1,9 @@
 ﻿
+using System;
+
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 
 namespace kumaS.Tracker.PoseNet
@@ -8,20 +11,26 @@ namespace kumaS.Tracker.PoseNet
     [BurstCompile]
     public class ResNormalizer : IJob
     {
+        [NativeDisableUnsafePtrRestriction]
         [ReadOnly]
-        public NativeArray<byte> Input;
+        public IntPtr Input;
+
+        [ReadOnly]
+        public int Length;
 
         [WriteOnly]
         public NativeArray<float> Output;
 
 
-        public void Execute()
+        public unsafe void Execute()
         {
-            for (var i = 0; i < Input.Length / 3; i++)
+            var data = (byte*)Input.ToPointer();
+
+            for (var i = 0; i < Length; i++)
             {
-                Output[i * 3] = Input[i * 3 + 2] - 123.15f;
-                Output[i * 3 + 1] = Input[i * 3 + 1] - 115.90f;
-                Output[i * 3 + 2] = Input[i * 3] - 103.06f;
+                Output[3 * i] = data[3 * i + 2] - 123.15f;
+                Output[3 * i + 1] = data[3 * i + 1] - 115.90f;
+                Output[3 * i + 2] = data[3 * i] - 103.06f;
             }
         }
     }

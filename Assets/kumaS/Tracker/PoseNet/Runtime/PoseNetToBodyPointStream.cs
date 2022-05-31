@@ -8,6 +8,8 @@ using System.Threading;
 
 using UniRx;
 
+using Unity.Jobs;
+
 using UnityEngine;
 
 namespace kumaS.Tracker.PoseNet
@@ -54,7 +56,19 @@ namespace kumaS.Tracker.PoseNet
         internal bool isDebugPosition = true;
 
         [SerializeField]
+        internal bool isVisualDebugPosition = true;
+
+        [SerializeField]
+        internal Color visualDebugPositionColor = Color.red;
+
+        [SerializeField]
         internal bool isDebugRotation = true;
+
+        [SerializeField]
+        internal bool isVisualDebugRotation = true;
+
+        [SerializeField]
+        internal Color visualDebugRotationColor = Color.green;
 
         public override string ProcessName { get; set; } = "PoseNet to BodyPoint";
         public override Type[] UseType { get; } = new Type[0];
@@ -74,6 +88,8 @@ namespace kumaS.Tracker.PoseNet
         private string[] rotationZ;
 
         private TransformTo3d[] workers;
+        private Vector3[] avatarCache;
+        private Vector3[] realCache;
 
         /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<BodyPoints> data)
@@ -96,8 +112,80 @@ namespace kumaS.Tracker.PoseNet
                         data.Data.ToDebugRotation(message, i, rotationX[i], rotationY[i], rotationZ[i]);
                     }
                 }
+
+                if (isVisualDebugPosition)
+                {
+                    avatarCache = data.Data.Position;
+                }
+                if (isVisualDebugRotation)
+                {
+                    realCache[0] = new Vector3(2, 0, 0);
+                    var point = realCache[0] + realDistance[0] * Vector3.down;
+                    realCache[1] = point + data.Data.Rotation[0] * Vector3.left * realDistance[1] / 2;
+                    realCache[2] = point + data.Data.Rotation[0] * Vector3.right * realDistance[2] / 2;
+                    realCache[3] = realCache[1] + data.Data.Rotation[2] * Vector3.forward * realDistance[3];
+                    realCache[4] = realCache[2] + data.Data.Rotation[3] * Vector3.forward * realDistance[3];
+                    realCache[5] = realCache[3] + data.Data.Rotation[4] * Vector3.forward * realDistance[4]; 
+                    realCache[6] = realCache[4] + data.Data.Rotation[5] * Vector3.forward * realDistance[4];
+                    realCache[7] = realCache[1] + Vector3.down * realDistance[5];
+                    realCache[8] = realCache[2] + Vector3.down * realDistance[5];
+                    realCache[9] = realCache[7] + data.Data.Rotation[8] * Vector3.forward * realDistance[5];
+                    realCache[10] = realCache[8] + data.Data.Rotation[9] * Vector3.forward * realDistance[5];
+                    realCache[11] = realCache[9] + data.Data.Rotation[10] * Vector3.forward * realDistance[6];
+                    realCache[12] = realCache[10] + data.Data.Rotation[10] * Vector3.forward * realDistance[6];
+                }
             }
             return new DebugMessage(data, message);
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (IsAvailable.Value)
+            {
+                if (isVisualDebugPosition)
+                {
+                    Gizmos.color = visualDebugPositionColor;
+                    for (var i = 0; i < 14; i++)
+                    {
+                        Gizmos.DrawWireSphere(avatarCache[i], 0.05f);
+                    }
+                    Gizmos.DrawLine(avatarCache[1], (avatarCache[2] + avatarCache[3]) / 2);
+                    Gizmos.DrawLine(avatarCache[2], avatarCache[3]);
+                    Gizmos.DrawLine(avatarCache[2], avatarCache[4]);
+                    Gizmos.DrawLine(avatarCache[4], avatarCache[6]);
+                    Gizmos.DrawLine(avatarCache[3], avatarCache[5]);
+                    Gizmos.DrawLine(avatarCache[5], avatarCache[7]);
+                    Gizmos.DrawLine(avatarCache[2], avatarCache[8]);
+                    Gizmos.DrawLine(avatarCache[3], avatarCache[9]);
+                    Gizmos.DrawLine(avatarCache[8], avatarCache[9]);
+                    Gizmos.DrawLine(avatarCache[8], avatarCache[10]);
+                    Gizmos.DrawLine(avatarCache[10], avatarCache[12]);
+                    Gizmos.DrawLine(avatarCache[9], avatarCache[11]);
+                    Gizmos.DrawLine(avatarCache[11], avatarCache[13]);
+                }
+
+                if (isVisualDebugRotation)
+                {
+                    Gizmos.color = visualDebugRotationColor;
+                    for (var i = 0; i < 13; i++)
+                    {
+                        Gizmos.DrawWireSphere(realCache[i], 0.05f);
+                    }
+                    Gizmos.DrawLine(realCache[0], (realCache[1] + realCache[2]) / 2);
+                    Gizmos.DrawLine(realCache[1], realCache[2]);
+                    Gizmos.DrawLine(realCache[1], realCache[3]);
+                    Gizmos.DrawLine(realCache[3], realCache[5]);
+                    Gizmos.DrawLine(realCache[2], realCache[4]);
+                    Gizmos.DrawLine(realCache[4], realCache[6]);
+                    Gizmos.DrawLine(realCache[1], realCache[7]);
+                    Gizmos.DrawLine(realCache[2], realCache[8]);
+                    Gizmos.DrawLine(realCache[7], realCache[8]);
+                    Gizmos.DrawLine(realCache[7], realCache[9]);
+                    Gizmos.DrawLine(realCache[8], realCache[10]);
+                    Gizmos.DrawLine(realCache[9], realCache[11]);
+                    Gizmos.DrawLine(realCache[10], realCache[12]);
+                }
+            }
         }
 
         /// <inheritdoc/>
@@ -149,6 +237,16 @@ namespace kumaS.Tracker.PoseNet
                 workers[i].Avatar.CopyFrom(avatarDistance);
             }
 
+            if (isVisualDebugPosition)
+            {
+                avatarCache = new Vector3[14];
+            }
+
+            if (isVisualDebugRotation)
+            {
+                realCache = new Vector3[13];
+            }
+
             isAvailable.Value = true;
         }
 
@@ -182,7 +280,7 @@ namespace kumaS.Tracker.PoseNet
             await UniTask.SwitchToMainThread();
             workers[thread].pixcelCenter = input.ImageSize / 2;
             workers[thread].Input.CopyFrom(input.Landmarks);
-            workers[thread].Execute();
+            await workers[thread].Schedule();
             return new BodyPoints(workers[thread].Position.ToArray(), workers[thread].Rotation.ToArray());
         }
 

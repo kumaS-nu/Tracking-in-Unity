@@ -16,8 +16,13 @@ namespace kumaS.Tracker.Dlib
         private void OnEnable()
         {
             property[nameof(DlibBBStream.interval)] = serializedObject.FindProperty(nameof(DlibBBStream.interval));
+            property[nameof(DlibBBStream.debugInterval)] = serializedObject.FindProperty(nameof(DlibBBStream.debugInterval));
+            property[nameof(DlibBBStream.debugImage)] = serializedObject.FindProperty(nameof(DlibBBStream.debugImage));
+            property[nameof(DlibBBStream.markColor)] = serializedObject.FindProperty(nameof(DlibBBStream.markColor));
+            property[nameof(DlibBBStream.markSize)] = serializedObject.FindProperty(nameof(DlibBBStream.markSize));
             property[nameof(DlibBBStream.isDebug)] = serializedObject.FindProperty(nameof(DlibBBStream.isDebug));
             property[nameof(DlibBBStream.isDebugBox)] = serializedObject.FindProperty(nameof(DlibBBStream.isDebugBox));
+            property[nameof(DlibBBStream.isDebugImage)] = serializedObject.FindProperty(nameof(DlibBBStream.isDebugImage));
         }
 
         public override void OnInspectorGUI()
@@ -98,6 +103,17 @@ namespace kumaS.Tracker.Dlib
                     using (new EditorGUI.IndentLevelScope())
                     {
                         EditorGUILayout.PropertyField(property[nameof(DlibBBStream.isDebugBox)], new GUIContent("Boundy box"));
+                        EditorGUILayout.PropertyField(property[nameof(DlibBBStream.isDebugImage)], new GUIContent("by Image"));
+                        if (property[nameof(DlibBBStream.isDebugImage)].boolValue)
+                        {
+                            using (new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.PropertyField(property[nameof(DlibBBStream.debugImage)], new GUIContent("Image debugger"));
+                                EditorGUILayout.PropertyField(property[nameof(DlibBBStream.markColor)], new GUIContent("Line color"));
+                                EditorGUILayout.PropertyField(property[nameof(DlibBBStream.markSize)], new GUIContent("Line thickness"));
+                                EditorGUILayout.PropertyField(property[nameof(DlibBBStream.debugInterval)], new GUIContent("Interval"));
+                            }
+                        }
                     }
                 }
             }

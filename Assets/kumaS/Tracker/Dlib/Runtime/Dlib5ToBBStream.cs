@@ -17,6 +17,21 @@ namespace kumaS.Tracker.Dlib
         [SerializeField]
         internal bool isDebugBox = true;
 
+        [SerializeField]
+        internal bool isDebugImage = false;
+
+        [SerializeField]
+        internal int debugInterval = 2;
+
+        [SerializeField]
+        internal DebugImageStream debugImage;
+
+        [SerializeField]
+        internal Color markColor = new Color(0, 1, 0, 0.5f);
+
+        [SerializeField]
+        internal int markSize = 3;
+
         public override string ProcessName { get; set; } = "Dlib 5 landmarks to BB";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
         public override string[] DebugKey { get; } = new string[] { SchedulableData<object>.Elapsed_Time, nameof(Image_Width), nameof(Image_Height), nameof(X), nameof(Y), nameof(Width), nameof(Height) };
@@ -28,7 +43,10 @@ namespace kumaS.Tracker.Dlib
         private readonly string Y = nameof(Y);
         private readonly string Width = nameof(Width);
         private readonly string Height = nameof(Height);
+        private Scalar color;
+        private int skipCount = 0;
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<BoundaryBox> data)
         {
             var message = new Dictionary<string, string>();
@@ -44,12 +62,30 @@ namespace kumaS.Tracker.Dlib
                     message[Width] = data.Data.Box.width.ToString();
                     message[Height] = data.Data.Box.height.ToString();
                 }
+
+                if (isDebugImage && debugImage != null)
+                {
+                    if (skipCount < debugInterval)
+                    {
+                        skipCount++;
+                    }
+                    else
+                    {
+                        var mat = new Mat(data.Data.ImageSize.y, data.Data.ImageSize.x, MatType.CV_8UC3);
+                        var rect = new OpenCvSharp.Rect((int)data.Data.Box.x, (int)data.Data.Box.y, (int)data.Data.Box.width, (int)data.Data.Box.height);
+                        mat.Rectangle(rect, color, markSize);
+                        debugImage.SetImage(Id, mat);
+                        skipCount = 0;
+                    }
+                }
             }
             return new DebugMessage(data, message);
         }
 
+        /// <inheritdoc/>
         protected override void InitInternal(int thread, CancellationToken token) { }
 
+        /// <inheritdoc/>
         protected override SchedulableData<BoundaryBox> ProcessInternal(SchedulableData<Dlib5Landmarks> input)
         {
 
@@ -76,6 +112,7 @@ namespace kumaS.Tracker.Dlib
             }
         }
 
+        /// <inheritdoc/>
         public override void Dispose(){ }
     }
 }

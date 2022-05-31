@@ -59,9 +59,15 @@ namespace kumaS.Tracker.Core
             cvVideo = new VideoCapture();
             cvVideo.SetExceptionMode(true);
             cvVideo.Open(cameraIndex);
-            cvVideo.Fps = requestFps;
-            cvVideo.FrameWidth = requestWidth;
-            cvVideo.FrameHeight = requestHeight;
+            if (requestFps > 0)
+            {
+                cvVideo.Fps = requestFps;
+            }
+            if (requestWidth > 0 && requestHeight > 0)
+            {
+                cvVideo.FrameWidth = requestWidth;
+                cvVideo.FrameHeight = requestHeight;
+            }
         }
 
         public void Dispose()

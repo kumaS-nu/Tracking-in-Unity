@@ -1,0 +1,57 @@
+{
+    "managedList": [
+        {
+            "packageName": "DlibDotNet",
+            "fileNames": [
+                "DlibDotNet"
+            ]
+        },
+        {
+            "packageName": "Lib.Harmony",
+            "fileNames": [
+                "0Harmony"
+            ]
+        },
+        {
+            "packageName": "OpenCvSharp4.runtime.win",
+            "fileNames": []
+        },
+        {
+            "packageName": "OpenCvSharp4",
+            "fileNames": [
+                "OpenCvSharp",
+                "OpenCvSharp.Extensions"
+            ]
+        },
+        {
+            "packageName": "System.Drawing.Common",
+            "fileNames": [
+                "System.Drawing.Common"
+            ]
+        },
+        {
+            "packageName": "System.Runtime.CompilerServices.Unsafe",
+            "fileNames": [
+                "System.Runtime.CompilerServices.Unsafe"
+            ]
+        },
+        {
+            "packageName": "System.Memory",
+            "fileNames": [
+                "System.Memory"
+            ]
+        },
+        {
+            "packageName": "System.Buffers",
+            "fileNames": [
+                "System.Buffers"
+            ]
+        },
+        {
+            "packageName": "System.Drawing.Common",
+            "fileNames": [
+                "System.Drawing.Common"
+            ]
+        }
+    ]
+}

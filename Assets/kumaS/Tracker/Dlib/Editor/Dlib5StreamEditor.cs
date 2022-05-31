@@ -21,8 +21,15 @@ namespace kumaS.Tracker.Dlib.Editor
         {
             property[nameof(Dlib5Stream.filePath)] = serializedObject.FindProperty(nameof(Dlib5Stream.filePath));
             property[nameof(Dlib5Stream.pathType)] = serializedObject.FindProperty(nameof(Dlib5Stream.pathType));
+            property[nameof(Dlib5Stream.interval)] = serializedObject.FindProperty(nameof(Dlib5Stream.interval));
+            property[nameof(Dlib5Stream.debugInterval)] = serializedObject.FindProperty(nameof(Dlib5Stream.debugInterval));
+            property[nameof(Dlib5Stream.debugImage)] = serializedObject.FindProperty(nameof(Dlib5Stream.debugImage));
+            property[nameof(Dlib5Stream.markColor)] = serializedObject.FindProperty(nameof(Dlib5Stream.markColor));
+            property[nameof(Dlib5Stream.markSize)] = serializedObject.FindProperty(nameof(Dlib5Stream.markSize));
+            property[nameof(Dlib5Stream.fontScale)] = serializedObject.FindProperty(nameof(Dlib5Stream.fontScale));
             property[nameof(Dlib5Stream.isDebug)] = serializedObject.FindProperty(nameof(Dlib5Stream.isDebug));
             property[nameof(Dlib5Stream.isDebugPoint)] = serializedObject.FindProperty(nameof(Dlib5Stream.isDebugPoint));
+            property[nameof(Dlib5Stream.isDebugImage)] = serializedObject.FindProperty(nameof(Dlib5Stream.isDebugImage));
             pathTypeLabel = PathUtil.PathHeadLabel.Skip(1).ToArray();
             pathTypeIndex = pathTypeLabel.Select(value => PathUtil.PathHeadLabel.ToList().IndexOf(value)).ToArray();
         }
@@ -103,6 +110,23 @@ namespace kumaS.Tracker.Dlib.Editor
                     using (new EditorGUI.IndentLevelScope())
                     {
                         EditorGUILayout.PropertyField(property[nameof(Dlib5Stream.isDebugPoint)], new GUIContent("Point"));
+                        EditorGUILayout.PropertyField(property[nameof(Dlib5Stream.isDebugImage)], new GUIContent("by Image"));
+                        if (property[nameof(Dlib5Stream.isDebugImage)].boolValue)
+                        {
+                            using (new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.PropertyField(property[nameof(Dlib5Stream.debugImage)], new GUIContent("Image debugger"));
+                                EditorGUILayout.PropertyField(property[nameof(Dlib5Stream.markColor)], new GUIContent("Mark color"));
+                                EditorGUILayout.PropertyField(property[nameof(Dlib5Stream.markSize)], new GUIContent("Mark size"));
+                                EditorGUILayout.PropertyField(property[nameof(Dlib5Stream.debugInterval)], new GUIContent("Interval"));
+                                EditorGUILayout.PropertyField(property[nameof(Dlib5Stream.isDebugIndex)], new GUIContent("with Index"));
+                                if (property[nameof(Dlib5Stream.isDebugIndex)].boolValue)
+                                {
+                                    EditorGUILayout.PropertyField(property[nameof(Dlib5Stream.fontScale)], new GUIContent("Font scale"));
+                                }
+
+                            }
+                        }
                     }
                 }
             }
@@ -125,6 +149,7 @@ namespace kumaS.Tracker.Dlib.Editor
                 }
                 property[nameof(Dlib5Stream.filePath)].stringValue = filePath;
                 property[nameof(Dlib5Stream.pathType)].intValue = pathType;
+                EditorGUILayout.PropertyField(property[nameof(Dlib5Stream.interval)], new GUIContent("Interval"));
             }
             EditorGUILayout.Space();
             EditorGUILayout.Space();

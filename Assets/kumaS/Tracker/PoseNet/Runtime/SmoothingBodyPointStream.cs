@@ -127,11 +127,12 @@ namespace kumaS.Tracker.PoseNet
 
             debugKey = dkey.ToArray();
 
-            sqrSpeedLimit = speedLimit * speedLimit;
+            sqrSpeedLimit = sqrSpeedLimit < Mathf.Epsilon ? float.MaxValue : speedLimit * speedLimit;
             for (var i = 0; i < rotationRange.Length; i++)
             {
-                rotationRangeInternal[i] = Mathf.Cos(rotationRange[i]);
-                rotationZRangeNegative[i] = 360.0f - rotationZRange[i];
+                rotationRangeInternal[i] = rotationRange[i] < Mathf.Epsilon ? float.MinValue : Mathf.Cos(rotationRange[i]);
+                rotationZRangeNegative[i] = rotationZRange[i] < Mathf.Epsilon ? float.MinValue : 360.0f - rotationZRange[i];
+                rotationZRange[i] = rotationZRange[i] < Mathf.Epsilon ? float.MaxValue : rotationZRange[i];
             }
             isAvailable.Value = true;
         }
@@ -160,14 +161,14 @@ namespace kumaS.Tracker.PoseNet
             }
 
             var rot = new Quaternion[15];
-            for(var i = 0; i < rot.Length; i++)
+            for (var i = 0; i < rot.Length; i++)
             {
                 rot[i] = datas[0].Rotation[i];
             }
-            
+
             for (var i = 1; i < datas.Length; i++)
             {
-                for(var j = 0; j < rot.Length; j++)
+                for (var j = 0; j < rot.Length; j++)
                 {
                     rot[j] = QuaternionInterpolation.Zslerp(rot[j], datas[i].Rotation[j], 1.0f / (i + 1));
                 }
@@ -223,7 +224,7 @@ namespace kumaS.Tracker.PoseNet
                 return false;
             }
 
-            if (input.Position[0].z < zMin || input.Position[0].z > zMin)
+            if (input.Position[0].z < zMin || input.Position[0].z > zMax)
             {
                 return false;
             }
@@ -233,7 +234,7 @@ namespace kumaS.Tracker.PoseNet
                 return false;
             }
 
-            if (RotationCheck(input.Rotation[0], lastOutput.Rotation[0], 0))
+            if (!RotationCheck(input.Rotation[0], lastOutput.Rotation[0], 0))
             {
                 return false;
             }
@@ -241,52 +242,52 @@ namespace kumaS.Tracker.PoseNet
             var inverse0 = Quaternion.Inverse(input.Rotation[0]);
             var inverse1 = Quaternion.Inverse(lastOutput.Rotation[0]);
 
-            if (RotationCheck(inverse0 * input.Rotation[1], inverse1 * lastOutput.Rotation[1], 1))
+            if (!RotationCheck(inverse0 * input.Rotation[1], inverse1 * lastOutput.Rotation[1], 1))
             {
                 return false;
             }
 
-            if (RotationCheck(inverse0 * input.Rotation[2] * leftSholder, inverse1 * lastOutput.Rotation[2] * leftSholder, 2))
+            if (!RotationCheck(inverse0 * input.Rotation[2] * leftSholder, inverse1 * lastOutput.Rotation[2] * leftSholder, 2))
             {
                 return false;
             }
 
-            if (RotationCheck(inverse0 * input.Rotation[3] * rightSholder, inverse1 * lastOutput.Rotation[3] * rightSholder, 3))
+            if (!RotationCheck(inverse0 * input.Rotation[3] * rightSholder, inverse1 * lastOutput.Rotation[3] * rightSholder, 3))
             {
                 return false;
             }
 
-            if (RotationCheck(input.Rotation[4] * Quaternion.Inverse(input.Rotation[2] * leftElbow), lastOutput.Rotation[4] * Quaternion.Inverse(lastOutput.Rotation[2] * leftElbow), 4))
+            if (!RotationCheck(input.Rotation[4] * Quaternion.Inverse(input.Rotation[2] * leftElbow), lastOutput.Rotation[4] * Quaternion.Inverse(lastOutput.Rotation[2] * leftElbow), 4))
             {
                 return false;
             }
 
-            if (RotationCheck(input.Rotation[5] * Quaternion.Inverse(input.Rotation[3] * rightElbow), lastOutput.Rotation[5] * Quaternion.Inverse(lastOutput.Rotation[3] * rightElbow), 5))
+            if (!RotationCheck(input.Rotation[5] * Quaternion.Inverse(input.Rotation[3] * rightElbow), lastOutput.Rotation[5] * Quaternion.Inverse(lastOutput.Rotation[3] * rightElbow), 5))
             {
                 return false;
             }
 
-            if (RotationCheck(inverse0 * input.Rotation[8] * hip, inverse1 * lastOutput.Rotation[8] * hip, 8))
+            if (!RotationCheck(inverse0 * input.Rotation[8] * hip, inverse1 * lastOutput.Rotation[8] * hip, 8))
             {
                 return false;
             }
 
-            if (RotationCheck(inverse0 * input.Rotation[9] * hip, inverse1 * lastOutput.Rotation[9] * hip, 9))
+            if (!RotationCheck(inverse0 * input.Rotation[9] * hip, inverse1 * lastOutput.Rotation[9] * hip, 9))
             {
                 return false;
             }
 
-            if (RotationCheck(input.Rotation[10] * Quaternion.Inverse(input.Rotation[8] * knee), lastOutput.Rotation[10] * Quaternion.Inverse(lastOutput.Rotation[8] * knee), 10))
+            if (!RotationCheck(input.Rotation[10] * Quaternion.Inverse(input.Rotation[8] * knee), lastOutput.Rotation[10] * Quaternion.Inverse(lastOutput.Rotation[8] * knee), 10))
             {
                 return false;
             }
 
-            if (RotationCheck(input.Rotation[11] * Quaternion.Inverse(input.Rotation[9] * knee), lastOutput.Rotation[11] * Quaternion.Inverse(lastOutput.Rotation[9] * knee), 11))
+            if (!RotationCheck(input.Rotation[11] * Quaternion.Inverse(input.Rotation[9] * knee), lastOutput.Rotation[11] * Quaternion.Inverse(lastOutput.Rotation[9] * knee), 11))
             {
                 return false;
             }
 
-            if (RotationCheck(inverse0 * input.Rotation[14] * head, inverse1 * lastOutput.Rotation[14] * head, 14))
+            if (!RotationCheck(inverse0 * input.Rotation[14] * head, inverse1 * lastOutput.Rotation[14] * head, 14))
             {
                 return false;
             }
@@ -309,7 +310,7 @@ namespace kumaS.Tracker.PoseNet
                 return false;
             }
 
-            if (Vector3.Angle(localForward, reference * Vector3.forward) > rotationSpeedLimit[index])
+            if (rotationSpeedLimit[index] > 0 && Vector3.Angle(localForward, reference * Vector3.forward) > rotationSpeedLimit[index])
             {
                 return false;
             }

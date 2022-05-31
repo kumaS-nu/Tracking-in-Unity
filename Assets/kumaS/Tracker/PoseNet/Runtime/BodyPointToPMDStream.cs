@@ -28,7 +28,7 @@ namespace kumaS.Tracker.PoseNet
 
         private string[] debugKey;
 
-        public override IReadOnlyReactiveProperty<bool> IsAvailable { get => IsAvailable; }
+        public override IReadOnlyReactiveProperty<bool> IsAvailable { get => isAvailable; }
 
         private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
 
@@ -130,6 +130,6 @@ namespace kumaS.Tracker.PoseNet
             return new SchedulableData<PredictedModelData>(input, ret);
         }
 
-        public override void Dispose(){ }
+        public override void Dispose() { }
     }
 }

@@ -32,11 +32,9 @@ namespace kumaS.Tracker.PoseNet
         public NativeArray<Vector2> Input;
 
         /// <value="Position">推定された3d位置。</value>
-        [WriteOnly]
         public NativeArray<Vector3> Position;
 
         /// <value="Rotation">推定された回転。</value>
-        [WriteOnly]
         public NativeArray<Quaternion> Rotation;
 
         /// <value="zOffset">zのオフセット。オフセットなしだと、カメラのある点が原点。</value>
@@ -99,7 +97,7 @@ namespace kumaS.Tracker.PoseNet
             // 最初に、画像の中心を原点にする。
             for (var i = 0; i < Input.Length; i++)
             {
-                Centered[i] -= pixcelCenter;
+                Centered[i] = Input[i] - pixcelCenter;
             }
 
             // 左肩・腰のz座標を推定。

@@ -49,7 +49,7 @@ namespace kumaS.Tracker.VRM
                 {
                     if (innerTransforms.TryGetValue(rot.Key, out Transform t))
                     {
-                        t.rotation = rot.Value;
+                        t.localRotation = rot.Value;
                     }
                 }
 

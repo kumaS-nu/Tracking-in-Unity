@@ -5,7 +5,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "be34d8abf43bed7cf55015becc002554ed3703c8"
+      "hash": "9e2163616b9c527fa9461544e2bcc5f93fd12d83"
     },
     "com.hecomi.uosc": {
       "version": "https://github.com/hecomi/uOSC.git?path=/Assets/uOSC/Scripts",
@@ -29,28 +29,28 @@
       "hash": "b00fee6b4415cb66cfe1664c47e8aa683b834565"
     },
     "com.unity.animation.rigging": {
-      "version": "1.0.3",
+      "version": "1.1.1",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.3.4",
-        "com.unity.test-framework": "1.1.14"
+        "com.unity.burst": "1.4.1",
+        "com.unity.test-framework": "1.1.24"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.barracuda": {
-      "version": "2.1.0-preview",
+      "version": "3.0.0",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.burst": "1.6.0-pre.2",
+        "com.unity.burst": "1.6.0",
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.imageconversion": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.burst": {
-      "version": "1.6.0-pre.2",
+      "version": "1.6.5",
       "depth": 1,
       "source": "registry",
       "dependencies": {
@@ -59,11 +59,11 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.collab-proxy": {
-      "version": "1.7.1",
+      "version": "1.15.16",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.nuget.newtonsoft-json": "2.0.0"
+        "com.unity.services.core": "1.0.1"
       },
       "url": "https://packages.unity.com"
     },
@@ -75,16 +75,16 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "2.0.7",
+      "version": "3.0.13",
       "depth": 0,
       "source": "registry",
       "dependencies": {
-        "com.unity.test-framework": "1.1.1"
+        "com.unity.ext.nunit": "1.0.6"
       },
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.visualstudio": {
-      "version": "2.0.11",
+      "version": "2.0.15",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -93,28 +93,46 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.vscode": {
-      "version": "1.2.3",
+      "version": "1.2.5",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.mathematics": {
-      "version": "1.2.1",
+      "version": "1.2.5",
       "depth": 2,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
-    "com.unity.nuget.newtonsoft-json": {
-      "version": "2.0.0",
+    "com.unity.services.core": {
+      "version": "1.0.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.unitywebrequest": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.sysroot": {
+      "version": "1.0.0",
       "depth": 1,
       "source": "registry",
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+    "com.unity.sysroot.linux-x86_64": {
+      "version": "1.0.0",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.sysroot": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
     "com.unity.test-framework": {
-      "version": "1.1.27",
+      "version": "1.1.31",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -134,7 +152,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.timeline": {
-      "version": "1.4.8",
+      "version": "1.6.4",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -142,6 +160,16 @@
         "com.unity.modules.animation": "1.0.0",
         "com.unity.modules.audio": "1.0.0",
         "com.unity.modules.particlesystem": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.toolchain.win-x86_64-linux-x86_64": {
+      "version": "1.0.0",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.sysroot": "1.0.0",
+        "com.unity.sysroot.linux-x86_64": "1.0.0"
       },
       "url": "https://packages.unity.com"
     },
@@ -154,38 +182,96 @@
         "com.unity.modules.imgui": "1.0.0"
       }
     },
-    "com.vrmc.unigltf": {
-      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/UniGLTF#v0.65.3",
+    "com.vrmc.gltf": {
+      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/UniGLTF#v0.91.0",
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.vrmc.vrmshaders": "0.65.3"
+        "com.vrmc.vrmshaders": "0.91.0"
       },
-      "hash": "9e737d3d11c06bc3ed1f8d467b985ec17e5f9da2"
+      "hash": "72a1218c516ea415fdd0f01adcf55c76a8fc0956"
     },
     "com.vrmc.univrm": {
-      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRM#v0.65.3",
+      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRM#v0.91.0",
       "depth": 0,
       "source": "git",
       "dependencies": {
-        "com.vrmc.vrmshaders": "0.65.3",
-        "com.vrmc.unigltf": "2.1.3"
+        "com.vrmc.vrmshaders": "0.91.0",
+        "com.vrmc.gltf": "0.91.0"
       },
-      "hash": "9e737d3d11c06bc3ed1f8d467b985ec17e5f9da2"
+      "hash": "72a1218c516ea415fdd0f01adcf55c76a8fc0956"
+    },
+    "com.vrmc.vrm": {
+      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRM10#v0.91.0",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.vrmc.vrmshaders": "0.91.0",
+        "com.vrmc.gltf": "0.91.0"
+      },
+      "hash": "72a1218c516ea415fdd0f01adcf55c76a8fc0956"
     },
     "com.vrmc.vrmshaders": {
-      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRMShaders#v0.65.3",
+      "version": "https://github.com/vrm-c/UniVRM.git?path=/Assets/VRMShaders#v0.91.0",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "9e737d3d11c06bc3ed1f8d467b985ec17e5f9da2"
+      "hash": "72a1218c516ea415fdd0f01adcf55c76a8fc0956"
     },
     "org.kumas.nuget-importer": {
       "version": "https://github.com/kumaS-nu/NuGet-importer-for-Unity.git?path=NuGetImporterForUnity/Packages/NuGet Importer",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "5169baee086f947152237757ddef6a1e397d638e"
+      "hash": "1644ed9bf8dc3206730f92c06583d18677464d51"
+    },
+    "org.nuget.dlibdotnet": {
+      "version": "file:DlibDotNet",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "org.nuget.lib.harmony": {
+      "version": "file:Lib.Harmony",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "org.nuget.opencvsharp4": {
+      "version": "file:OpenCvSharp4",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "org.nuget.opencvsharp4.runtime.win": {
+      "version": "file:OpenCvSharp4.runtime.win",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "org.nuget.system.buffers": {
+      "version": "file:System.Buffers",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "org.nuget.system.drawing.common": {
+      "version": "file:System.Drawing.Common",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "org.nuget.system.memory": {
+      "version": "file:System.Memory",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
+    },
+    "org.nuget.system.runtime.compilerservices.unsafe": {
+      "version": "file:System.Runtime.CompilerServices.Unsafe",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {}
     },
     "com.unity.modules.ai": {
       "version": "1.0.0",

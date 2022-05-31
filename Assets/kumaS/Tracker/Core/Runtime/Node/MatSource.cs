@@ -35,13 +35,10 @@ namespace kumaS.Tracker.Core
         internal int cameraIndex = 0;
 
         [SerializeField]
-        internal int request_fps = 30;
+        internal int requestFps = 30;
 
         [SerializeField]
-        internal int request_width = 1280;
-
-        [SerializeField]
-        internal int request_height = 720;
+        internal Vector2Int requestResolution = new Vector2Int(1280, 720);
 
         [SerializeField]
         internal string filePath = default;
@@ -58,7 +55,6 @@ namespace kumaS.Tracker.Core
 
         private readonly ReactiveProperty<bool> isAvailable = new ReactiveProperty<bool>(false);
         private IVideo video;
-        private CancellationToken token;
 
         private readonly string Data_Pointer = nameof(Data_Pointer);
         private readonly string Width = nameof(Width);
@@ -110,7 +106,7 @@ namespace kumaS.Tracker.Core
                 }
                 else
                 {
-                    video = new WrapedWebCamTexture(cameraIndex, request_fps, request_height, request_width, sendSameImage);
+                    video = new WrapedWebCamTexture(cameraIndex, requestFps, requestResolution.y, requestResolution.x, sendSameImage);
                 }
             }
             else
@@ -121,7 +117,7 @@ namespace kumaS.Tracker.Core
                 }
                 else
                 {
-                    video = new WrapedVideoCapture(cameraIndex, request_fps, request_height, request_width, sendSameImage, token);
+                    video = new WrapedVideoCapture(cameraIndex, requestFps, requestResolution.y, requestResolution.x, sendSameImage, token);
                 }
             }
             Observable.EveryUpdate().First(_ => video.IsPrepared).Subscribe(_ => { isAvailable.Value = true; });

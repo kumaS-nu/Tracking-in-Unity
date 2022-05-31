@@ -18,33 +18,28 @@ namespace kumaS.Tracker.PoseNet
             }
             normalizer = new ResNormalizer
             {
-                Input = new NativeArray<byte>(inputSize.Width * inputSize.Height * 3, Allocator.Persistent),
+                Length = inputSize.Width * inputSize.Height,
                 Output = new NativeArray<float>(inputSize.Width * inputSize.Height * 3, Allocator.Persistent)
             };
             outputStride = stride;
-            quantHeight = inputSize.Height / stride;
-            quantWidth = inputSize.Width / stride;
-            quantAmount = quantHeight * quantWidth;
             flag = interpolation;
             minScore = score * 17;
             worker = WorkerFactory.CreateWorker(WorkerFactory.Type.ComputePrecompiled, model);
-            data = new byte[inputSize.Width * inputSize.Height * 3];
         }
 
-        public override void Dispose()
+        public override void DisposeInternal()
         {
-            normalizer.Input.Dispose();
             normalizer.Output.Dispose();
         }
 
-        protected override void ExecuteInternal()
+        protected override (Tensor heatmap, Tensor offsets) ExecuteInternal()
         {
-            normalizer.Input.CopyFrom(data);
+            normalizer.Input = data.Data;
             normalizer.Execute();
             var input = new Tensor(1, inputSize.Height, inputSize.Width, 3, normalizer.Output.ToArray());
             worker.Execute(input);
-            heatmap = worker.PeekOutput("float_heatmaps").ToReadOnlyArray();
-            offsets = worker.PeekOutput("float_short_offsets").ToReadOnlyArray();
+            input.Dispose();
+            return (worker.PeekOutput("float_heatmaps"), worker.PeekOutput("float_short_offsets"));
         }
     }
 }

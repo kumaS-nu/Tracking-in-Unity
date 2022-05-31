@@ -45,6 +45,12 @@ namespace kumaS.Tracker.Live2D.Editor
             EditorGUILayout.Space();
             EditorGUILayout.Space();
 
+            EditorGUILayout.LabelField("Live2d setting", EditorStyles.boldLabel);
+            using (new EditorGUI.IndentLevelScope())
+            {
+                EditorGUILayout.PropertyField(property[nameof(Live2DDestnation.model)], new GUIContent("Model"));
+            }
+
             serializedObject.ApplyModifiedProperties();
         }
     }

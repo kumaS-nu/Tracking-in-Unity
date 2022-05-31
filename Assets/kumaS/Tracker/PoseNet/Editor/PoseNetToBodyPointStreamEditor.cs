@@ -1,6 +1,7 @@
 ﻿using kumaS.Tracker.Core;
 
 using System.Collections.Generic;
+using System.Linq;
 
 using UnityEditor;
 
@@ -29,7 +30,11 @@ namespace kumaS.Tracker.PoseNet.Editor
             property[nameof(PoseNetToBodyPointStream.wantMirror)] = serializedObject.FindProperty(nameof(PoseNetToBodyPointStream.wantMirror));
             property[nameof(PoseNetToBodyPointStream.isDebug)] = serializedObject.FindProperty(nameof(PoseNetToBodyPointStream.isDebug));
             property[nameof(PoseNetToBodyPointStream.isDebugPosition)] = serializedObject.FindProperty(nameof(PoseNetToBodyPointStream.isDebugPosition));
+            property[nameof(PoseNetToBodyPointStream.isVisualDebugPosition)] = serializedObject.FindProperty(nameof(PoseNetToBodyPointStream.isVisualDebugPosition));
+            property[nameof(PoseNetToBodyPointStream.visualDebugPositionColor)] = serializedObject.FindProperty(nameof(PoseNetToBodyPointStream.visualDebugPositionColor));
             property[nameof(PoseNetToBodyPointStream.isDebugRotation)] = serializedObject.FindProperty(nameof(PoseNetToBodyPointStream.isDebugRotation));
+            property[nameof(PoseNetToBodyPointStream.isVisualDebugRotation)] = serializedObject.FindProperty(nameof(PoseNetToBodyPointStream.isVisualDebugRotation));
+            property[nameof(PoseNetToBodyPointStream.visualDebugRotationColor)] = serializedObject.FindProperty(nameof(PoseNetToBodyPointStream.visualDebugRotationColor));
         }
 
         public override void OnInspectorGUI()
@@ -53,7 +58,17 @@ namespace kumaS.Tracker.PoseNet.Editor
                     using (new EditorGUI.IndentLevelScope())
                     {
                         EditorGUILayout.PropertyField(property[nameof(PoseNetToBodyPointStream.isDebugPosition)], new GUIContent("Position"));
+                        EditorGUILayout.PropertyField(property[nameof(PoseNetToBodyPointStream.isVisualDebugPosition)], new GUIContent("Model position as visual"));
+                        if (property[nameof(PoseNetToBodyPointStream.isVisualDebugPosition)].boolValue)
+                        {
+                            EditorGUILayout.PropertyField(property[nameof(PoseNetToBodyPointStream.visualDebugPositionColor)], new GUIContent("Model position color"));
+                        }
                         EditorGUILayout.PropertyField(property[nameof(PoseNetToBodyPointStream.isDebugRotation)], new GUIContent("Rotation"));
+                        EditorGUILayout.PropertyField(property[nameof(PoseNetToBodyPointStream.isVisualDebugRotation)], new GUIContent("Real estimate as visual"));
+                        if (property[nameof(PoseNetToBodyPointStream.isVisualDebugRotation)].boolValue)
+                        {
+                            EditorGUILayout.PropertyField(property[nameof(PoseNetToBodyPointStream.visualDebugRotationColor)], new GUIContent("Real estimate color"));
+                        }
                     }
                 }
             }
@@ -105,6 +120,12 @@ namespace kumaS.Tracker.PoseNet.Editor
                         }
                     }
                 }
+
+                if(Enumerable.Range(0, PoseNetToBodyPointStream.distanceName.Length).Select(i => property[nameof(PoseNetToBodyPointStream.realDistance)].GetArrayElementAtIndex(i).floatValue).Any(len => len < 0.01))
+                {
+                    EditorGUILayout.HelpBox("Real distance に不正な値があります。（< 0.01）", MessageType.Error);
+                }
+
                 EditorGUILayout.Space();
 
                 property[nameof(PoseNetToBodyPointStream.fold1)].boolValue = EditorGUILayout.Foldout(property[nameof(PoseNetToBodyPointStream.fold1)].boolValue, "Avatar");
@@ -117,6 +138,11 @@ namespace kumaS.Tracker.PoseNet.Editor
                             EditorGUILayout.PropertyField(property[nameof(PoseNetToBodyPointStream.avatarDistance)].GetArrayElementAtIndex(i), new GUIContent(PoseNetToBodyPointStream.distanceName[i]));
                         }
                     }
+                }
+
+                if (Enumerable.Range(0, PoseNetToBodyPointStream.distanceName.Length).Select(i => property[nameof(PoseNetToBodyPointStream.avatarDistance)].GetArrayElementAtIndex(i).floatValue).Any(len => len <= 0))
+                {
+                    EditorGUILayout.HelpBox("avater distance に不正な値があります。（<= 0）", MessageType.Error);
                 }
             }
 

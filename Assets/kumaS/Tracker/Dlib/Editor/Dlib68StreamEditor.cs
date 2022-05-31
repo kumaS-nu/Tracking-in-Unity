@@ -21,8 +21,15 @@ namespace kumaS.Tracker.Dlib.Editor
         {
             property[nameof(Dlib68Stream.filePath)] = serializedObject.FindProperty(nameof(Dlib68Stream.filePath));
             property[nameof(Dlib68Stream.pathType)] = serializedObject.FindProperty(nameof(Dlib68Stream.pathType));
+            property[nameof(Dlib68Stream.debugImage)] = serializedObject.FindProperty(nameof(Dlib68Stream.debugImage));
+            property[nameof(Dlib68Stream.interval)] = serializedObject.FindProperty(nameof(Dlib68Stream.interval));
+            property[nameof(Dlib68Stream.markColor)] = serializedObject.FindProperty(nameof(Dlib68Stream.markColor));
+            property[nameof(Dlib68Stream.markSize)] = serializedObject.FindProperty(nameof(Dlib68Stream.markSize));
+            property[nameof(Dlib68Stream.fontScale)] = serializedObject.FindProperty(nameof(Dlib68Stream.fontScale));
             property[nameof(Dlib68Stream.isDebug)] = serializedObject.FindProperty(nameof(Dlib68Stream.isDebug));
             property[nameof(Dlib68Stream.isDebugPoint)] = serializedObject.FindProperty(nameof(Dlib68Stream.isDebugPoint));
+            property[nameof(Dlib68Stream.isDebugImage)] = serializedObject.FindProperty(nameof(Dlib68Stream.isDebugImage));
+            property[nameof(Dlib68Stream.isDebugIndex)] = serializedObject.FindProperty(nameof(Dlib68Stream.isDebugIndex));
             pathTypeLabel = PathUtil.PathHeadLabel.Skip(1).ToArray();
             pathTypeIndex = pathTypeLabel.Select(value => PathUtil.PathHeadLabel.ToList().IndexOf(value)).ToArray();
         }
@@ -113,6 +120,23 @@ namespace kumaS.Tracker.Dlib.Editor
                     using (new EditorGUI.IndentLevelScope())
                     {
                         EditorGUILayout.PropertyField(property[nameof(Dlib68Stream.isDebugPoint)], new GUIContent("Point"));
+                        EditorGUILayout.PropertyField(property[nameof(Dlib68Stream.isDebugImage)], new GUIContent("by Image"));
+                        if (property[nameof(Dlib68Stream.isDebugImage)].boolValue)
+                        {
+                            using (new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.PropertyField(property[nameof(Dlib68Stream.debugImage)], new GUIContent("Image debugger"));
+                                EditorGUILayout.PropertyField(property[nameof(Dlib68Stream.markColor)], new GUIContent("Mark color"));
+                                EditorGUILayout.PropertyField(property[nameof(Dlib68Stream.markSize)], new GUIContent("Mark size"));
+                                EditorGUILayout.PropertyField(property[nameof(Dlib68Stream.interval)], new GUIContent("Interval"));
+                                EditorGUILayout.PropertyField(property[nameof(Dlib68Stream.isDebugIndex)], new GUIContent("with Index"));
+                                if (property[nameof(Dlib68Stream.isDebugIndex)].boolValue)
+                                {
+                                    EditorGUILayout.PropertyField(property[nameof(Dlib68Stream.fontScale)], new GUIContent("Font scale"));
+                                }
+
+                            }
+                        }
                     }
                 }
             }

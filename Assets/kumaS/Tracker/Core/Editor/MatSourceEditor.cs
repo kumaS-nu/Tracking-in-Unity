@@ -18,6 +18,8 @@ namespace kumaS.Tracker.Core.Editor
             property[nameof(MatSource.useUnity)] = serializedObject.FindProperty(nameof(MatSource.useUnity));
             property[nameof(MatSource.isFile)] = serializedObject.FindProperty(nameof(MatSource.isFile));
             property[nameof(MatSource.cameraIndex)] = serializedObject.FindProperty(nameof(MatSource.cameraIndex));
+            property[nameof(MatSource.requestFps)] = serializedObject.FindProperty(nameof(MatSource.requestFps));
+            property[nameof(MatSource.requestResolution)] = serializedObject.FindProperty(nameof(MatSource.requestResolution));
             property[nameof(MatSource.filePath)] = serializedObject.FindProperty(nameof(MatSource.filePath));
             property[nameof(MatSource.pathType)] = serializedObject.FindProperty(nameof(MatSource.pathType));
             property[nameof(MatSource.isDebug)] = serializedObject.FindProperty(nameof(MatSource.isDebug));
@@ -103,6 +105,8 @@ namespace kumaS.Tracker.Core.Editor
                 else
                 {
                     EditorGUILayout.PropertyField(property[nameof(MatSource.cameraIndex)], new GUIContent("Camera index"));
+                    EditorGUILayout.PropertyField(property[nameof(MatSource.requestFps)], new GUIContent("Request FPS"));
+                    property[nameof(MatSource.requestResolution)].vector2IntValue = EditorGUILayout.Vector2IntField("Request resolution", property[nameof(MatSource.requestResolution)].vector2IntValue);
                 }
             }
             serializedObject.ApplyModifiedProperties();

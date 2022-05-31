@@ -19,9 +19,14 @@ namespace kumaS.Tracker.Core.Editor
         {
             property[nameof(OpenCvBBStream.isDebug)] = serializedObject.FindProperty(nameof(OpenCvBBStream.isDebug));
             property[nameof(OpenCvBBStream.isDebugBox)] = serializedObject.FindProperty(nameof(OpenCvBBStream.isDebugBox));
+            property[nameof(OpenCvBBStream.isDebugImage)] = serializedObject.FindProperty(nameof(OpenCvBBStream.isDebugImage));
             property[nameof(OpenCvBBStream.filePath)] = serializedObject.FindProperty(nameof(OpenCvBBStream.filePath));
             property[nameof(OpenCvBBStream.pathType)] = serializedObject.FindProperty(nameof(OpenCvBBStream.pathType));
             property[nameof(OpenCvBBStream.interval)] = serializedObject.FindProperty(nameof(OpenCvBBStream.interval));
+            property[nameof(OpenCvBBStream.debugInterval)] = serializedObject.FindProperty(nameof(OpenCvBBStream.debugInterval));
+            property[nameof(OpenCvBBStream.debugImage)] = serializedObject.FindProperty(nameof(OpenCvBBStream.debugImage));
+            property[nameof(OpenCvBBStream.markColor)] = serializedObject.FindProperty(nameof(OpenCvBBStream.markColor));
+            property[nameof(OpenCvBBStream.markSize)] = serializedObject.FindProperty(nameof(OpenCvBBStream.markSize));
             pathTypeLabel = PathUtil.PathHeadLabel.Skip(1).ToArray();
             pathTypeIndex = pathTypeLabel.Select(value => PathUtil.PathHeadLabel.ToList().IndexOf(value)).ToArray();
         }
@@ -73,6 +78,17 @@ namespace kumaS.Tracker.Core.Editor
                     using (new EditorGUI.IndentLevelScope())
                     {
                         EditorGUILayout.PropertyField(property[nameof(OpenCvBBStream.isDebugBox)], new GUIContent("Boundy box"));
+                        EditorGUILayout.PropertyField(property[nameof(OpenCvBBStream.isDebugImage)], new GUIContent("by Image"));
+                        if (property[nameof(OpenCvBBStream.isDebugImage)].boolValue)
+                        {
+                            using (new EditorGUI.IndentLevelScope())
+                            {
+                                EditorGUILayout.PropertyField(property[nameof(OpenCvBBStream.debugImage)], new GUIContent("Image debugger"));
+                                EditorGUILayout.PropertyField(property[nameof(OpenCvBBStream.markColor)], new GUIContent("Line color"));
+                                EditorGUILayout.PropertyField(property[nameof(OpenCvBBStream.markSize)], new GUIContent("Line thickness"));
+                                EditorGUILayout.PropertyField(property[nameof(OpenCvBBStream.debugInterval)], new GUIContent("Interval"));
+                            }
+                        }
                     }
                 }
             }

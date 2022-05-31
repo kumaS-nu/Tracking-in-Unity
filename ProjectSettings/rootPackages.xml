@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packages xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <package id="Lib.Harmony" version="2.1.1" targetFramework=".NETFramework4.5" allowedVersions="[2.1.1]" />
+  <package id="DlibDotNet" version="19.21.0.20210302" targetFramework=".NETStandard2.0" allowedVersions="[19.21.0.20210302]" />
+  <package id="OpenCvSharp4.runtime.win" version="4.5.3.20211207" targetFramework=".NETStandard2.0" allowedVersions="[4.5.3.20211207]" />
+  <package id="OpenCvSharp4" version="4.5.3.20211207" targetFramework=".NETFramework4.6.1" allowedVersions="[4.5.3.20211207]" />
+</packages>

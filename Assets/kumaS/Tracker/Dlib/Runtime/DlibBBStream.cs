@@ -28,8 +28,25 @@ namespace kumaS.Tracker.Dlib
         [SerializeField]
         internal int interval = 0;
 
+        [SerializeField]
+        internal bool isDebugImage = false;
+
+        [SerializeField]
+        internal int debugInterval = 2;
+
+        [SerializeField]
+        internal DebugImageStream debugImage;
+
+        [SerializeField]
+        internal Color markColor = new Color(0, 1, 0, 0.5f);
+
+        [SerializeField]
+        internal int markSize = 3;
+
         private FrontalFaceDetector[] detectors;
         private volatile int skipped = 0;
+        private Scalar color;
+        private int skipCount = 0;
 
         public override string ProcessName { get; set; } = "Dlib BB predict";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
@@ -46,23 +63,37 @@ namespace kumaS.Tracker.Dlib
         private readonly string Height = nameof(Height);
         private readonly string Angle = nameof(Angle);
 
+        /// <inheritdoc/>
         protected override async void InitInternal(int thread, CancellationToken token)
         {
+            if(isDebug.Value && isDebugImage && debugImage == null)
+            {
+                throw new ArgumentNullException("debugImage is null. At " + ProcessName + ".");
+            }
             detectors = new FrontalFaceDetector[thread];
             List<UniTask> tasks = new List<UniTask>();
             for (var i = 0; i < thread; i++)
             {
                 tasks.Add(LoadAsync(i));
             }
+
+            if (isDebug.Value && isDebugImage && debugImage != null)
+            {
+                debugImage.SetAlphaData(Id, markColor.a);
+                color = new Scalar(markColor.b * 255, markColor.g * 255, markColor.r * 255);
+            }
+
             await UniTask.WhenAll(tasks);
             isAvailable.Value = true;
         }
+
         private async UniTask LoadAsync(int thread)
         {
             await UniTask.SwitchToThreadPool();
             detectors[thread] = DlibDotNet.Dlib.GetFrontalFaceDetector();
         }
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<BoundaryBox> data)
         {
             var message = new Dictionary<string, string>();
@@ -79,10 +110,27 @@ namespace kumaS.Tracker.Dlib
                     message[Height] = data.Data.Box.height.ToString();
                     message[Angle] = data.Data.Angle.ToString();
                 }
+
+                if (isDebugImage && debugImage != null)
+                {
+                    if (skipCount < debugInterval)
+                    {
+                        skipCount++;
+                    }
+                    else
+                    {
+                        var mat = new Mat(data.Data.ImageSize.y, data.Data.ImageSize.x, MatType.CV_8UC3);
+                        var rect = new OpenCvSharp.Rect((int)data.Data.Box.x, (int)data.Data.Box.y, (int)data.Data.Box.width, (int)data.Data.Box.height);
+                        mat.Rectangle(rect, color, markSize);
+                        debugImage.SetImage(Id, mat);
+                        skipCount = 0;
+                    }
+                }
             }
             return new DebugMessage(data, message);
         }
 
+        /// <inheritdoc/>
         protected override SchedulableData<BoundaryBox> ProcessInternal(SchedulableData<Mat> input)
         {
             if (!input.IsSuccess || input.IsSignal)
@@ -138,6 +186,7 @@ namespace kumaS.Tracker.Dlib
             }
         }
 
+        /// <inheritdoc/>
         public override void Dispose()
         {
             foreach (FrontalFaceDetector d in detectors)

@@ -29,8 +29,25 @@ namespace kumaS.Tracker.Core
         [SerializeField]
         internal int interval = 0;
 
+        [SerializeField]
+        internal bool isDebugImage = false;
+
+        [SerializeField]
+        internal int debugInterval = 2;
+
+        [SerializeField]
+        internal DebugImageStream debugImage;
+
+        [SerializeField]
+        internal Color markColor = new Color(0, 1, 0, 0.5f);
+
+        [SerializeField]
+        internal int markSize = 3;
+
         private CascadeClassifier[] predictor;
         private volatile int skipped = 0;
+        private Scalar color;
+        private int skipCount = 0;
 
         public override string ProcessName { get; set; } = "OpenCvSharp BB predict";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
@@ -47,6 +64,7 @@ namespace kumaS.Tracker.Core
         private readonly string Height = nameof(Height);
         private readonly string Angle = nameof(Angle);
 
+        /// <inheritdoc/>
         protected override async void InitInternal(int thread, CancellationToken token)
         {
             predictor = new CascadeClassifier[thread];
@@ -57,12 +75,19 @@ namespace kumaS.Tracker.Core
                 {
                     tasks.Add(LoadAsync(i));
                 }
-            await UniTask.WhenAll(tasks);
+                await UniTask.WhenAll(tasks);
             }
             catch (Exception)
             {
                 throw;
             }
+
+            if (isDebug.Value && isDebugImage && debugImage != null)
+            {
+                debugImage.SetAlphaData(Id, markColor.a);
+                color = new Scalar(markColor.b * 255, markColor.g * 255, markColor.r * 255);
+            }
+
             isAvailable.Value = true;
         }
 
@@ -76,6 +101,7 @@ namespace kumaS.Tracker.Core
             }
         }
 
+        /// <inheritdoc/>
         protected override SchedulableData<BoundaryBox> ProcessInternal(SchedulableData<Mat> input)
         {
             try
@@ -120,6 +146,7 @@ namespace kumaS.Tracker.Core
             }
         }
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<BoundaryBox> data)
         {
             var message = new Dictionary<string, string>();
@@ -136,10 +163,27 @@ namespace kumaS.Tracker.Core
                     message[Height] = data.Data.Box.height.ToString();
                     message[Angle] = data.Data.Angle.ToString();
                 }
+
+                if (isDebugImage && debugImage != null)
+                {
+                    if (skipCount < debugInterval)
+                    {
+                        skipCount++;
+                    }
+                    else
+                    {
+                        var mat = new Mat(data.Data.ImageSize.y, data.Data.ImageSize.x, MatType.CV_8UC3);
+                        var rect = new OpenCvSharp.Rect((int)data.Data.Box.x, (int)data.Data.Box.y, (int)data.Data.Box.width, (int)data.Data.Box.height);
+                        mat.Rectangle(rect, color, markSize);
+                        debugImage.SetImage(Id, mat);
+                        skipCount = 0;
+                    }
+                }
             }
             return new DebugMessage(data, message);
         }
 
+        /// <inheritdoc/>
         public override void Dispose()
         {
             foreach (CascadeClassifier p in predictor)

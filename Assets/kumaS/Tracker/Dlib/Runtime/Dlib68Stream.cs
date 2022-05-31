@@ -30,6 +30,27 @@ namespace kumaS.Tracker.Dlib
         [SerializeField]
         internal bool isDebugPoint = true;
 
+        [SerializeField]
+        internal bool isDebugImage = false;
+
+        [SerializeField]
+        internal int interval = 2;
+
+        [SerializeField]
+        internal DebugImageStream debugImage;
+
+        [SerializeField]
+        internal Color markColor = new Color(0, 1, 0, 0.5f);
+
+        [SerializeField]
+        internal int markSize = 3;
+
+        [SerializeField]
+        internal bool isDebugIndex = true;
+
+        [SerializeField]
+        internal double fontScale = 1;
+
         public override string ProcessName { get; set; } = "Dlib 68 landmark detector";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
         public override string[] DebugKey { get => debugKey; }
@@ -47,9 +68,17 @@ namespace kumaS.Tracker.Dlib
         private readonly string Image_Height = nameof(Image_Height);
         private string[] Point_X = default;
         private string[] Point_Y = default;
+        private Scalar color;
+        private int skipCount = 0;
 
+        /// <inheritdoc/>
         protected override async void InitInternal(int thread, CancellationToken token)
         {
+            if(isDebug.Value && isDebugImage && debugImage == null)
+            {
+                throw new ArgumentNullException("debugImage is null. At " + ProcessName + ".");
+            }
+
             predictor = new ShapePredictor[thread];
             List<UniTask> tasks = new List<UniTask>();
             for (var i = 0; i < thread; i++)
@@ -76,6 +105,12 @@ namespace kumaS.Tracker.Dlib
             Point_Y = py.ToArray();
             debugKey = key.ToArray();
 
+            if (isDebug.Value && isDebugImage && debugImage != null)
+            {
+                debugImage.SetAlphaData(Id, markColor.a);
+                color = new Scalar(markColor.b * 255, markColor.g * 255, markColor.r * 255);
+            }
+
             await UniTask.WhenAll(tasks);
             isAvailable.Value = true;
         }
@@ -85,6 +120,7 @@ namespace kumaS.Tracker.Dlib
             predictor[thread] = ShapePredictor.Deserialize(filePath);
         }
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<Dlib68Landmarks> data)
         {
             var message = new Dictionary<string, string>();
@@ -101,10 +137,34 @@ namespace kumaS.Tracker.Dlib
                         message[Point_Y[i]] = data.Data.Landmarks[i].Y.ToString();
                     }
                 }
+
+                if (isDebugImage && debugImage != null)
+                {
+                    if (skipCount < interval)
+                    {
+                        skipCount++;
+                    }
+                    else
+                    {
+                        var mat = new Mat(data.Data.ImageSize.y, data.Data.ImageSize.x, MatType.CV_8UC3);
+                        for (var i = 0; i < 68; i++)
+                        {
+                            var point = new OpenCvSharp.Point(data.Data.Landmarks[i].X, data.Data.Landmarks[i].Y);
+                            mat.Circle(point, markSize, color, -1);
+                            if (isDebugIndex)
+                            {
+                                mat.PutText((i + 1).ToString(), point, HersheyFonts.HersheyComplex, fontScale, color);
+                            }
+                        }
+                        debugImage.SetImage(Id, mat);
+                        skipCount = 0;
+                    }
+                }
             }
             return new DebugMessage(data, message);
         }
 
+        /// <inheritdoc/>
         protected override SchedulableData<Dlib68Landmarks> ProcessInternal(SchedulableData<BoundaryBox> input)
         {
             if (!input.IsSuccess || input.IsSignal)
@@ -182,6 +242,7 @@ namespace kumaS.Tracker.Dlib
             }
         }
 
+        /// <inheritdoc/>
         public override void Dispose()
         {
             foreach (ShapePredictor p in predictor)

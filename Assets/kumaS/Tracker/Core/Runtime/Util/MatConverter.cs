@@ -4,38 +4,75 @@ using UnityEngine;
 
 using OpenCvSharp;
 using System.Runtime.InteropServices;
+using Unity.Jobs;
+using Unity.Collections;
+using System;
+using Unity.Burst;
+using Unity.Collections.LowLevel.Unsafe;
 
 namespace kumaS.Tracker.Core
 {
-    /// <summary>
-    /// Matを変換するクラス。
-    /// </summary>
-    public static class MatConverter
+    [BurstCompile]
+    public struct Color32ToMat : IJob
     {
-        /// <summary>
-        /// Color32からMatへ変換。
-        /// </summary>
-        /// <param name="data">変換するデータ。</param>
-        /// <param name="height">画像の高さ。</param>
-        /// <param name="width">画像の横幅。</param>
-        /// <returns>Mat画像。</returns>
-        public static Mat Color32ToMat(Color32[] data, int height, int width)
+        [ReadOnly]
+        public NativeArray<Color32> Input;
+
+        [NativeDisableUnsafePtrRestriction]
+        [ReadOnly]
+        public IntPtr mat;
+
+        [ReadOnly]
+        public int height_;
+
+        [ReadOnly]
+        public int width_;
+
+        public unsafe void Execute()
         {
-            var mat = new Mat(height, width, MatType.CV_8UC3);
-            var byteData = new byte[width * height * 3];
-            for (var h = 0; h < height; h++)
+            var data = (byte*)mat.ToPointer();
+            for (var h = 0; h < height_; h++)
             {
-                for (var w = 0; w < width; w++)
+                for (var w = 0; w < width_; w++)
                 {
-                    var colorIndex = data.Length - (h * width + width - w);
-                    var byteIndex = 3 * (h * width + w);
-                    byteData[byteIndex] = data[colorIndex].b;
-                    byteData[byteIndex + 1] = data[colorIndex].g;
-                    byteData[byteIndex + 2] = data[colorIndex].r;
+                    var colorIndex = h * width_ + width_ - w - 1;
+                    var byteIndex = 3 * (h * width_ + w);
+                    data[byteIndex] = Input[colorIndex].b;
+                    data[byteIndex + 1] = Input[colorIndex].g;
+                    data[byteIndex + 2] = Input[colorIndex].r;
                 }
             }
-            Marshal.Copy(byteData, 0, mat.Data, width * height * 3);
-            return mat;
+        }
+    }
+
+    [BurstCompile]
+    public struct MatToColor32 : IJob
+    {
+        [WriteOnly]
+        public NativeArray<Color32> Output;
+
+        [NativeDisableUnsafePtrRestriction]
+        [ReadOnly]
+        public IntPtr mat;
+
+        [ReadOnly]
+        public int height_;
+
+        [ReadOnly]
+        public int width_;
+
+        public unsafe void Execute()
+        {
+            var data = (byte*)mat.ToPointer();
+            for (var h = 0; h < height_; h++)
+            {
+                for (var w = 0; w < width_; w++)
+                {
+                    var colorIndex = h * width_ + width_ - w - 1;
+                    var byteIndex = 3 * (h * width_ + w);
+                    Output[colorIndex] = new Color32(data[byteIndex + 2], data[byteIndex + 1], data[byteIndex], 1);
+                }
+            }
         }
     }
 }

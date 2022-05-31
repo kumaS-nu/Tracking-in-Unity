@@ -128,10 +128,14 @@ namespace kumaS.Tracker.Live2D
         /// <param name="input">入力。</param>
         private void AddPosRot(Dictionary<string, float> output, PredictedModelData input)
         {
+            if (!input.Rotation.ContainsKey(PredictedModelData.DefaultRotationList[0]))
+            {
+                return;
+            }
             Quaternion rootRot = input.Rotation[PredictedModelData.DefaultRotationList[0]];
             Quaternion leftInverse = Quaternion.Inverse(rootRot) * new Quaternion(0, 1 / Mathf.Sqrt(2), 0, 1 / Mathf.Sqrt(2)) * new Quaternion(0, 0, -1 / Mathf.Sqrt(2), 1 / Mathf.Sqrt(2));
             Quaternion rightInverse = Quaternion.Inverse(rootRot) * new Quaternion(0, -1 / Mathf.Sqrt(2), 0, 1 / Mathf.Sqrt(2)) * new Quaternion(0, 0, 1 / Mathf.Sqrt(2), 1 / Mathf.Sqrt(2));
-            if (input.Position.ContainsKey(PredictedModelData.DefaultPositionList[0]) && input.Rotation.ContainsKey(PredictedModelData.DefaultRotationList[0]))
+            if (input.Position.ContainsKey(PredictedModelData.DefaultPositionList[0]))
             {
                 output["ParamBaseX"] = input.Position[PredictedModelData.DefaultPositionList[0]].x;
                 output["ParamBaseY"] = input.Position[PredictedModelData.DefaultPositionList[0]].y;

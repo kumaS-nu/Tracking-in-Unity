@@ -112,7 +112,7 @@ namespace kumaS.Tracker.Core
                 {
                     StreamNode previousNode = streamNodes[i].Last();
                     StreamNode nextNode = streamNodes[streamOutputs[i] - 1].First();
-                    if (!previousNode.Next.Any(node => node != nextNode))
+                    if (!previousNode.Next.Any(node => node == nextNode))
                     {
                         previousNode.Next.Add(nextNode);
                         nextNode.Previous.Add(previousNode);
@@ -162,7 +162,11 @@ namespace kumaS.Tracker.Core
             if (node.Next.Count == 0)
             {
                 stream = stream.Share();
-                stream.ObserveOnMainThread().Subscribe(((IScheduleDestination)node.Schedulable).Process, onError).AddTo(disposables);
+                try
+                {
+                    stream.ObserveOnMainThread().Subscribe(((IScheduleDestination)node.Schedulable).Process, onError).AddTo(disposables);
+                }
+                catch (Exception) { throw new ArgumentException("ノードの終端が終点のノードではありません。"); }
                 node.FinishStream = stream;
                 return;
             }

@@ -251,7 +251,7 @@ namespace kumaS.Tracker.Core
             var dummyProperty = new ReactiveProperty<bool>(false);
             Observable.Merge(allNodes.Select(node => node.Schedulable.IsAvailable)).Merge(dummyProperty)
                 .First(_ => allNodes.All(node => node.Schedulable.IsAvailable.Value)).Do(_ => Debug.Log("開始しました．"))
-                .Subscribe(_ => UniTask.RunOnThreadPool(() => ScheduleLoop(source.Token)), _ => broken = true).AddTo(disposable);
+                .Subscribe(__ => _ = UniTask.RunOnThreadPool(() => ScheduleLoop(source.Token)), _ => broken = true).AddTo(disposable);
             dummyProperty.Value = true;
         }
 
@@ -372,7 +372,9 @@ namespace kumaS.Tracker.Core
                 }
                 sb.Append(",");
             }
-            sb.Remove(sb.Length - 1, 1);
+            if (dKey.Length > 0) {
+                sb.Remove(sb.Length - 1, 1); 
+            }
 
             if (isWriteFile.Value)
             {
@@ -404,7 +406,10 @@ namespace kumaS.Tracker.Core
                     sb2.Append(key);
                     sb2.Append(",");
                 }
-                sb2.Remove(sb2.Length - 1, 1);
+                if (debugKey.Length > 0)
+                {
+                    sb2.Remove(sb2.Length - 1, 1);
+                }
                 sb2.Append("\n");
                 sb2.Append(sb);
                 Debug.Log(sb2.ToString());

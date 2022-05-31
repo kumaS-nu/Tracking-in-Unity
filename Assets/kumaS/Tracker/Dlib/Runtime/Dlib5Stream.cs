@@ -33,6 +33,27 @@ namespace kumaS.Tracker.Dlib
         [SerializeField]
         internal int interval = 0;
 
+        [SerializeField]
+        internal bool isDebugImage = false;
+
+        [SerializeField]
+        internal int debugInterval = 2;
+
+        [SerializeField]
+        internal DebugImageStream debugImage;
+
+        [SerializeField]
+        internal Color markColor = new Color(0, 1, 0, 0.5f);
+
+        [SerializeField]
+        internal int markSize = 3;
+
+        [SerializeField]
+        internal bool isDebugIndex = true;
+
+        [SerializeField]
+        internal double fontScale = 1;
+
         public override string ProcessName { get; set; } = "Dlib 5 landmark detector";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
         public override string[] DebugKey { get => debugKey; }
@@ -51,7 +72,10 @@ namespace kumaS.Tracker.Dlib
         private readonly string Image_Height = nameof(Image_Height);
         private string[] Point_X = default;
         private string[] Point_Y = default;
+        private Scalar color;
+        private int skipCount = 0;
 
+        /// <inheritdoc/>
         protected override async void InitInternal(int thread, CancellationToken token)
         {
             predictor = new ShapePredictor[thread];
@@ -79,15 +103,23 @@ namespace kumaS.Tracker.Dlib
             Point_Y = py.ToArray();
             debugKey = key.ToArray();
 
+            if (isDebug.Value && isDebugImage && debugImage != null)
+            {
+                debugImage.SetAlphaData(Id, markColor.a);
+                color = new Scalar(markColor.b * 255, markColor.g * 255, markColor.r * 255);
+            }
+
             await UniTask.WhenAll(tasks);
             isAvailable.Value = true;
         }
+
         private async UniTask LoadAsync(int thread)
         {
             await UniTask.SwitchToThreadPool();
             predictor[thread] = ShapePredictor.Deserialize(filePath);
         }
 
+        /// <inheritdoc/>
         protected override IDebugMessage DebugLogInternal(SchedulableData<Dlib5Landmarks> data)
         {
             var message = new Dictionary<string, string>();
@@ -104,10 +136,34 @@ namespace kumaS.Tracker.Dlib
                         message[Point_Y[i]] = data.Data.Landmarks[i].Y.ToString();
                     }
                 }
+
+                if (isDebugImage && debugImage != null)
+                {
+                    if (skipCount < debugInterval)
+                    {
+                        skipCount++;
+                    }
+                    else
+                    {
+                        var mat = new Mat(data.Data.ImageSize.y, data.Data.ImageSize.x, MatType.CV_8UC3);
+                        for (var i = 0; i < 5; i++)
+                        {
+                            var point = new OpenCvSharp.Point(data.Data.Landmarks[i].X, data.Data.Landmarks[i].Y);
+                            mat.Circle(point, markSize, color, -1);
+                            if (isDebugIndex)
+                            {
+                                mat.PutText((i + 1).ToString(), point, HersheyFonts.HersheyComplex, fontScale, color);
+                            }
+                        }
+                        debugImage.SetImage(Id, mat);
+                        skipCount = 0;
+                    }
+                }
             }
             return new DebugMessage(data, message);
         }
 
+        /// <inheritdoc/>
         protected override SchedulableData<Dlib5Landmarks> ProcessInternal(SchedulableData<BoundaryBox> input)
         {
             try
@@ -194,6 +250,7 @@ namespace kumaS.Tracker.Dlib
             }
         }
 
+        /// <inheritdoc/>
         public override void Dispose()
         {
             foreach (ShapePredictor p in predictor)

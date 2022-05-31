@@ -19,10 +19,7 @@ namespace kumaS.Tracker.PoseNet
     public sealed class PoseNetStream : ScheduleStreamBase<Mat, PoseNetLandmarks>
     {
         [SerializeField]
-        internal string filePath;
-
-        [SerializeField]
-        internal int pathType = 1;
+        internal NNModel modelFile;
 
         [SerializeField]
         internal int modelType = 0;
@@ -45,6 +42,27 @@ namespace kumaS.Tracker.PoseNet
         [SerializeField]
         internal bool isDebugLandmark = true;
 
+        [SerializeField]
+        internal bool isDebugImage = false;
+
+        [SerializeField]
+        internal DebugImageStream debugImage;
+
+        [SerializeField]
+        internal int interval = 2;
+
+        [SerializeField]
+        internal Color markColor = new Color(0, 1, 0, 0.5f);
+
+        [SerializeField]
+        internal int markSize = 3;
+
+        [SerializeField]
+        internal bool isDebugIndex = true;
+
+        [SerializeField]
+        internal double fontScale = 1;
+
         public override string ProcessName { get; set; } = "PoseNet landmark";
         public override Type[] UseType { get; } = new Type[] { typeof(Mat) };
         public override string[] DebugKey { get => debugKey; }
@@ -66,7 +84,8 @@ namespace kumaS.Tracker.PoseNet
         public static readonly int[] RES_NET_STRIDE = new int[] { 16, 32 };
 
         private PoseNetBase[] models;
-
+        private Scalar color;
+        private int skipCount = 0;
 
         protected override IDebugMessage DebugLogInternal(SchedulableData<PoseNetLandmarks> data)
         {
@@ -84,12 +103,40 @@ namespace kumaS.Tracker.PoseNet
                         message[Point_Y[i]] = data.Data.Landmarks[i].y.ToString();
                     }
                 }
+
+                if (isDebugImage && debugImage != null)
+                {
+                    if (skipCount < interval)
+                    {
+                        skipCount++;
+                    }
+                    else
+                    {
+                        var mat = new Mat(data.Data.ImageSize.y, data.Data.ImageSize.x, MatType.CV_8UC3);
+                        for (var i = 0; i < 17; i++)
+                        {
+                            var point = new OpenCvSharp.Point(data.Data.Landmarks[i].x, data.Data.Landmarks[i].y);
+                            mat.Circle(point, markSize, color, -1);
+                            if (isDebugIndex)
+                            {
+                                mat.PutText((i + 1).ToString(), point, HersheyFonts.HersheyComplex, fontScale, color);
+                            }
+                        }
+                        debugImage.SetImage(Id, mat);
+                        skipCount = 0;
+                    }
+                }
             }
             return new DebugMessage(data, message);
         }
 
         protected override void InitInternal(int thread, CancellationToken token)
         {
+            if(isDebug.Value && isDebugImage && debugImage == null)
+            {
+                throw new ArgumentNullException("debugImage is null. At " + ProcessName + ".");
+            }
+
             if (modelType == 0)
             {
                 models = new MobileNet[thread];
@@ -98,7 +145,7 @@ namespace kumaS.Tracker.PoseNet
             {
                 models = new ResNet[thread];
             }
-            Model model = ModelLoader.Load(filePath);
+            Model model = ModelLoader.Load(modelFile);
             Size input = isDefaultInputSize ? default : new Size(inputResolution.x, inputResolution.y);
             for (var i = 0; i < thread; i++)
             {
@@ -112,6 +159,11 @@ namespace kumaS.Tracker.PoseNet
                 }
             }
             MakeDebugKey();
+            if (isDebug.Value && isDebugImage && debugImage != null)
+            {
+                debugImage.SetAlphaData(Id, markColor.a);
+                color = new Scalar(markColor.b * 255, markColor.g * 255, markColor.r * 255);
+            }
             isAvailable.Value = true;
         }
 
@@ -154,7 +206,7 @@ namespace kumaS.Tracker.PoseNet
                         PoseNetLandmarks pose = models[thread].Execute(input.Data).ToObservable().Wait();
                         if (pose == default)
                         {
-                            return new SchedulableData<PoseNetLandmarks>(input, default, false, true, errorMessage: "顔が見つかりませんでした");
+                            return new SchedulableData<PoseNetLandmarks>(input, default, false, true, errorMessage: "体が見つかりませんでした");
                         }
 
                         return new SchedulableData<PoseNetLandmarks>(input, pose);

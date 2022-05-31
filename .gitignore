@@ -72,3 +72,10 @@ crashlytics-build.properties
 [Aa]ssets/shape_predictor_68_face_landmarks.dat
 [Aa]ssets/shape_predictor_68_face_landmarks.dat.meta
 UserSettings/
+
+/[Aa]ssets/[Pp]ackages.meta
+/[Aa]ssets/[Pp]ackages/
+
+/[Nn]u[Gg]et/
+
+/[Pp]ackages/*/

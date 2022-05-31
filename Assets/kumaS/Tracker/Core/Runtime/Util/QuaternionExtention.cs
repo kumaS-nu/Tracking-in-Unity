@@ -100,6 +100,7 @@ namespace kumaS.Tracker.Core
                 xRotate.w *= -1;
             }
             var theta = Mathf.Acos(xRotate.w) * t;
+            theta = float.IsNaN(theta) ? 0 : theta;
             var qX = new Quaternion(Mathf.Sign(xRotate.x) * Mathf.Sin(theta), 0, 0, Mathf.Cos(theta));
             return posRotate.qPos * a * qX;
         }
@@ -129,8 +130,8 @@ namespace kumaS.Tracker.Core
                 yRotate.w *= -1;
             }
             var theta = Mathf.Acos(yRotate.w) * t;
+            theta = float.IsNaN(theta) ? 0 : theta;
             var qY = new Quaternion(0, Mathf.Sign(yRotate.y) * Mathf.Sin(theta), 0, Mathf.Cos(theta));
-            var ret = posRotate.qPos * a * qY;
             return posRotate.qPos * a * qY;
         }
 
@@ -159,6 +160,7 @@ namespace kumaS.Tracker.Core
                 zRotate.w *= -1;
             }
             var theta = Mathf.Acos(zRotate.w) * t;
+            theta = float.IsNaN(theta) ? 0 : theta;
             var qZ = new Quaternion(0, 0, Mathf.Sign(zRotate.z) * Mathf.Sin(theta), Mathf.Cos(theta));
             return posRotate.qPos * a * qZ;
         }
@@ -192,10 +194,7 @@ namespace kumaS.Tracker.Core
                 axisRotate.w *= -1;
             }
             var theta = Mathf.Acos(axisRotate.w) * t;
-            if (float.IsNaN(theta))
-            {
-                theta = 0;
-            }
+            theta = float.IsNaN(theta) ? 0 : theta;
             var sin = Mathf.Sin(theta);
             var qAxis = new Quaternion(axis.x * Mathf.Sign(axisRotate.x) * sin, axis.y * Mathf.Sign(axisRotate.y) * sin, axis.z * Mathf.Sign(axisRotate.z) * sin, Mathf.Cos(theta));
             return posRotate.qPos * a * qAxis;
